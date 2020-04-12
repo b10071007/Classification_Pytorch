@@ -2,7 +2,7 @@
 """
 Created on Fri Apr  3 18:53:57 2020
 
-@author: USER
+@author: Po-Yen Hsieh
 """
 
 # 1. Loading and normalizing CIFAR10

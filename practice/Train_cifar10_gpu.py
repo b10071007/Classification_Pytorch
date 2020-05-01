@@ -15,11 +15,11 @@ import torch.optim as optim
 # ------------------------------------------------------------------------------#
 
 img_path = "D:/Dataset/forPytorch"
-model_path = "D:/Coding/python/pytorch/Practice/model/"
+model_path = "D:/Coding/python/pytorch/Practice/model2/"
 model_dir = model_path + 'cifar_net_gpu.pth'
 
-max_epoch = 100
-display_interval = 125
+max_epoch = 2
+display_interval = 20
 
 
 # 1. Loading and normalizing CIFAR10

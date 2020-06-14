@@ -58,9 +58,8 @@ class ClassifyDataset(Dataset):
         img_name = os.path.join(self.imgPath, self.fList[idx])
         image = io.imread(img_name)
         label = torch.tensor(int(self.labels[idx]))
-        sample = {'image': image, 'label': label}
 
         if self.transform:
-            sample['image'] = self.transform(sample['image'])
+            image = self.transform(image)
 
-        return sample
+        return image, label

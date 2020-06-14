@@ -17,8 +17,8 @@ imgPath = rootPath + "_Images/"
 train_fListPath = rootPath + "train.txt"
 val_fListPath = rootPath + "val.txt"
 
-model_path = "D:/Coding/pytorch/experiment/custom_cifar10/model/"
-model_dir = model_path + 'cifar_net_gpu.pth'
+model_path = "D:/Coding/pytorch/practice/model/"
+model_dir = model_path + 'cifar_net_gpu_custom.pth'
 
 batch_size_train = 200
 batch_size_val = 10
@@ -93,9 +93,7 @@ for epoch in range(num_epochs):
     running_loss = 0.0
     for i, data in enumerate(train_Loader, 0):
         # get the inputs; data is a dictionary of {image: X, label: X}
-        inputs = data['image']
-        labels = data['label']
-        inputs, labels = data['image'].to(device), data['label'].to(device)
+        inputs, labels = data[0].to(device), data[1].to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()

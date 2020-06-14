@@ -15,7 +15,7 @@ import torch.optim as optim
 # ------------------------------------------------------------------------------#
 
 img_path = "D:/Dataset/forPytorch"
-model_path = "D:/Coding/python/pytorch/Practice/model2/"
+model_path = "D:/Coding/pytorch/practice/model/"
 model_dir = model_path + 'cifar_net_gpu.pth'
 
 max_epoch = 2

@@ -22,7 +22,7 @@ model_dir = model_path + 'cifar_net_gpu_custom.pth'
 
 batch_size_train = 200
 batch_size_val = 10
-num_epochs = 2
+max_epoch = 2
 display_interval = 20
 
 # 1. Loading and normalizing Custom cifar10 dataset
@@ -86,17 +86,27 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 #--------------------------------------------------------------------------------------------------------#
 
 # 4. Train the network
+num_iterations = 0
+batch_time = 0
 
-print("Start to train custom cifar10 dataset ...")
-for epoch in range(num_epochs):
+start = torch.cuda.Event(enable_timing=True)
+end = torch.cuda.Event(enable_timing=True)
+
+log_str = "Epoch: [{:3d}/{:3d}] Iterations: {:4d} Loss: {:.3f} Batch_time: {:.2f} ms"
+
+for epoch in range(max_epoch):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(train_Loader, 0):
-        # get the inputs; data is a dictionary of {image: X, label: X}
+        
+        start.record()
+        # get the inputs; data is a list of [inputs, labels]
+        # inputs, labels = data
         inputs, labels = data[0].to(device), data[1].to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()
+
 
         # forward + backward + optimize
         outputs = net(inputs)
@@ -104,13 +114,18 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
+        end.record()
+        torch.cuda.synchronize()
+
+        num_iterations += 1
+        batch_time += start.elapsed_time(end)
+
         # print statistics
         running_loss += loss.item()
         if i % display_interval == (display_interval - 1):  # print every 'display_interval' mini-batches
-            # print('[%d, %5d] loss: %.3f' %
-            #       (epoch + 1, i + 1, running_loss / display_interval))
-            print( "epoch:[%d/%d] iter:[%d/%d]  loss: %.3f" %
-                   (epoch + 1, num_epochs, i+1, epoch_size, running_loss / display_interval) )
+            print(log_str.format(epoch, max_epoch, i + 1, 
+                                 running_loss / display_interval, 
+                                 batch_time/num_iterations))
             running_loss = 0.0
 
 print('Finished Training')

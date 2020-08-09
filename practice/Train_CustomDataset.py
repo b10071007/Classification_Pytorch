@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
 import sys
-sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
+sys.path.append("D:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
 
 #--------------------------------------------------------------------------------------------------------#
@@ -21,18 +21,18 @@ def GetCurrentTime():
 
 #--------------------------------------------------------------------------------------------------------#
 
-rootPath = "E:/Dataset/Classification/cifar10/"
+rootPath = "D:/Dataset/Classification/cifar10/"
 imgPath = rootPath + "_Images/"
 train_fListPath = rootPath + "train.txt"
 val_fListPath = rootPath + "val.txt"
 
-model_path = "E:/Coding/pytorch/project/Classification_Pytorch/model/"
+model_path = "D:/Coding/pytorch/project/Classification_Pytorch/model/"
 model_dir = model_path + 'cifar_net_gpu_custom.pth'
 
 batch_size_train = 200
 batch_size_val = 10
 max_epoch = 2
-display_interval = 20
+display_interval = 50
 
 # 1. Loading and normalizing Custom cifar10 dataset
 print("Setup dataset ...")

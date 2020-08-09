@@ -20,12 +20,12 @@ def GetCurrentTime():
 
 #--------------------------------------------------------------------------------------------------------#
 
-img_path = "E:/Dataset/Classification"
-model_path = "E:/Coding/pytorch/project/Classification_Pytorch/model/"
+img_path = "D:/Dataset/Classification"
+model_path = "D:/Coding/pytorch/project/Classification_Pytorch/model/"
 model_dir = model_path + 'cifar_net_gpu.pth'
 
 max_epoch = 2
-display_interval = 20
+display_interval = 50
 
 
 # 1. Loading and normalizing CIFAR10

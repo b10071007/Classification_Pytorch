@@ -1,5 +1,7 @@
 import os
 import numpy as np
+from time import time
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -8,16 +10,23 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
+import sys
+sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
 
 #--------------------------------------------------------------------------------------------------------#
 
-rootPath = "D:/Dataset/Classification/cifar10/"
+def GetCurrentTime():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+#--------------------------------------------------------------------------------------------------------#
+
+rootPath = "E:/Dataset/Classification/cifar10/"
 imgPath = rootPath + "_Images/"
 train_fListPath = rootPath + "train.txt"
 val_fListPath = rootPath + "val.txt"
 
-model_path = "D:/Coding/pytorch/practice/model/"
+model_path = "E:/Coding/pytorch/project/Classification_Pytorch/model/"
 model_dir = model_path + 'cifar_net_gpu_custom.pth'
 
 batch_size_train = 200
@@ -69,10 +78,10 @@ net = Net()
 # Training on GPU
 if torch.cuda.is_available():
     device = torch.device("cuda:0")
-    print(" - gpu is available -> use gpu")
+    print(" - GPU is available -> use GPU")
 else:
     device = torch.device("cpu")
-    print(" - gpu is not available -> use cpu")
+    print(" - GPU is not available -> use GPU")
 
 net.to(device)
 
@@ -86,20 +95,24 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 #--------------------------------------------------------------------------------------------------------#
 
 # 4. Train the network
-num_iterations = 0
-batch_time = 0
+# num_iterations = 0
+batch_time = []
 
-start = torch.cuda.Event(enable_timing=True)
-end = torch.cuda.Event(enable_timing=True)
+# start = torch.cuda.Event(enable_timing=True)
+# end = torch.cuda.Event(enable_timing=True)
 
 log_str = "Epoch: [{:3d}/{:3d}] Iterations: {:4d} Loss: {:.3f} Batch_time: {:.2f} ms"
 
+print('{}: Start Training '.format(GetCurrentTime()))
 for epoch in range(max_epoch):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(train_Loader, 0):
         
-        start.record()
+        # start.record()
+        torch.cuda.synchronize()
+        start = time()*1000
+
         # get the inputs; data is a list of [inputs, labels]
         # inputs, labels = data
         inputs, labels = data[0].to(device), data[1].to(device)
@@ -107,28 +120,31 @@ for epoch in range(max_epoch):  # loop over the dataset multiple times
         # zero the parameter gradients
         optimizer.zero_grad()
 
-
         # forward + backward + optimize
         outputs = net(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
-        end.record()
+        # end.record()
+        # torch.cuda.synchronize()
         torch.cuda.synchronize()
+        end = time()*1000
 
-        num_iterations += 1
-        batch_time += start.elapsed_time(end)
+        # num_iterations += 1
+        # batch_time.append(start.elapsed_time(end))
+        batch_time.append(end-start)
 
         # print statistics
         running_loss += loss.item()
         if i % display_interval == (display_interval - 1):  # print every 'display_interval' mini-batches
             print(log_str.format(epoch, max_epoch, i + 1, 
                                  running_loss / display_interval, 
-                                 batch_time/num_iterations))
+                                 np.mean(batch_time)))
+            batch_time = []
             running_loss = 0.0
 
-print('Finished Training')
+print('{}: Training Finished  '.format(GetCurrentTime()))
 
 os.makedirs(model_path, exist_ok=True)
 torch.save(net.state_dict(), model_dir)
@@ -153,11 +169,8 @@ print( 'Accuracy of the network on the 10000 test images: %d %%' % (100 * correc
 class_correct = list(0. for i in range(10))
 class_total = list(0. for i in range(10))
 with torch.no_grad():
-    for data in batch_size_val:
-        inputs = data['image']
-        labels = data['label']
-        inputs, labels = data['image'].to(device), data['label'].to(device)
-
+    for data in val_Loader:
+        images, labels = data[0].to(device), data[1].to(device)
         outputs = net(images)
         _, predicted = torch.max(outputs, 1)
         c = (predicted == labels).squeeze()

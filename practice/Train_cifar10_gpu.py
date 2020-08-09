@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
+from time import time
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,10 +13,15 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 
-# ------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------#
 
-img_path = "D:/Dataset/forPytorch"
-model_path = "D:/Coding/pytorch/practice/model/"
+def GetCurrentTime():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+#--------------------------------------------------------------------------------------------------------#
+
+img_path = "E:/Dataset/Classification"
+model_path = "E:/Coding/pytorch/project/Classification_Pytorch/model/"
 model_dir = model_path + 'cifar_net_gpu.pth'
 
 max_epoch = 2
@@ -81,20 +88,24 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 # ------------------------------------------------------------------------------#
 
 # 4. Train the network
-num_iterations = 0
-batch_time = 0
+# num_iterations = 0
+batch_time = []
 
-start = torch.cuda.Event(enable_timing=True)
-end = torch.cuda.Event(enable_timing=True)
+# start = torch.cuda.Event(enable_timing=True)
+# end = torch.cuda.Event(enable_timing=True)
 
 log_str = "Epoch: [{:3d}/{:3d}] Iterations: {:4d} Loss: {:.3f} Batch_time: {:.2f} ms"
 
+print('{}: Start Training '.format(GetCurrentTime()))
 for epoch in range(max_epoch):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         
-        start.record()
+        # start.record()
+        torch.cuda.synchronize()
+        start = time()*1000
+
         # get the inputs; data is a list of [inputs, labels]
         # inputs, labels = data
         inputs, labels = data[0].to(device), data[1].to(device)
@@ -102,31 +113,33 @@ for epoch in range(max_epoch):  # loop over the dataset multiple times
         # zero the parameter gradients
         optimizer.zero_grad()
 
-
         # forward + backward + optimize
         outputs = net(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
-        end.record()
+        # end.record()
+        # torch.cuda.synchronize()
         torch.cuda.synchronize()
+        end = time()*1000
 
-        num_iterations += 1
-        batch_time += start.elapsed_time(end)
-
+        # num_iterations += 1
+        # batch_time.append(start.elapsed_time(end))
+        batch_time.append(end-start)
+        
         # print statistics
         running_loss += loss.item()
         if i % display_interval == (display_interval - 1):  # print every 'display_interval' mini-batches
             print(log_str.format(epoch, max_epoch, i + 1, 
                                  running_loss / display_interval, 
-                                 batch_time/num_iterations)
-                )
+                                 np.mean(batch_time)))
+            batch_time = []
             # print('[%d, %5d] loss: %.3f' %
             #       (epoch + 1, i + 1, running_loss / display_interval))
             running_loss = 0.0
 
-print('Finished Training')
+print('{}: Training Finished  '.format(GetCurrentTime()))
 
 os.makedirs(model_path, exist_ok=True)
 torch.save(net.state_dict(), model_dir)

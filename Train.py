@@ -1,7 +1,7 @@
 
 import os
 import numpy as np
-from time import time
+import time
 from datetime import datetime
 
 import torch
@@ -11,22 +11,42 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
 import sys
-sys.path.append("D:/Coding/pytorch/project/Classification_Pytorch/")
+sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-from model import VGG
+from models import VGG
 
 #--------------------------------------------------------------------------------------------------------#
 
+# setup output manager
+class OutputManager():
+    def __init__(self, log_file_path):
+        self.log_file_path = log_file_path
+        filePath = os.path.split(log_file_path)[0]
+        if not os.path.exists(filePath): os.makedirs(filePath)
+        self.log_file = open(log_file_path, 'w')
+
+    def output(self, content):
+        print(content)
+        self.log_file.write(content + '\n')
+
+    def close(self):
+        self.log_file.close()
+
+#--------------------------------------------------------------------------------------------------------#
+        
 def GetCurrentTime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-#--------------------------------------------------------------------------------------------------------#
-
-def val(net, val_Loader, device):
+def val(net, val_Loader, device, outputManage):
+    outputManage.output("Start validation")
+    val_display_interval = 100
     correct = 0
     total = 0
     with torch.no_grad():
-        for data in val_Loader:
+        for iter_val, data in enumerate(val_Loader):
+            if iter_val % val_display_interval == (val_display_interval - 1):
+                outputManage.output("Process: {}".format(iter_val+1))
+
             # images, labels = data
             images, labels = data[0].to(device), data[1].to(device)
             outputs = net(images)
@@ -34,42 +54,48 @@ def val(net, val_Loader, device):
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
     
-    print( 'Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total) )
+    accuracy = (100 * correct / total)
+    outputManage.output( 'Accuracy on validation images: %d %%' % accuracy )
     
-    class_correct = list(0. for i in range(10))
-    class_total = list(0. for i in range(10))
-    with torch.no_grad():
-        for data in val_Loader:
-            images, labels = data[0].to(device), data[1].to(device)
-            outputs = net(images)
-            _, predicted = torch.max(outputs, 1)
-            c = (predicted == labels).squeeze()
-            for i in range(4):
-                label = labels[i]
-                class_correct[label] += c[i].item()
-                class_total[label] += 1
+    return accuracy
+    # class_correct = list(0. for i in range(10))
+    # class_total = list(0. for i in range(10))
+    # with torch.no_grad():
+    #     for data in val_Loader:
+    #         images, labels = data[0].to(device), data[1].to(device)
+    #         outputs = net(images)
+    #         _, predicted = torch.max(outputs, 1)
+    #         c = (predicted == labels).squeeze()
+    #         for i in range(4):
+    #             label = labels[i]
+    #             class_correct[label] += c[i].item()
+    #             class_total[label] += 1
     
-    for i in range(10):
-        print( 'Accuracy of %5s : %2d %%' % (i, 100 * class_correct[i] / class_total[i]) )
+    # for i in range(10):
+    #     print( 'Accuracy of %5s : %2d %%' % (i, 100 * class_correct[i] / class_total[i]) )
 
 
-def train(net, train_Loader, device, max_epoch, display_interval, epoch_size):
+def train(net, train_Loader, val_Loader, device, max_epoch, display_interval, epoch_size, val_interval, outputManage, best_model_path):
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
     
     batch_time = []
     log_str = "Epoch: [{:3d}/{:3d}] Iterations: {:4d} Loss: {:.3f} Batch_time: {:.2f} ms"
 
     print('{}: Start Training '.format(GetCurrentTime()))
+    best_ep = 0
+    best_acc = 0
+    best_model_message = "Best model until now:\n - epoch={}\n - Accuracy={}"
+
     for epoch in range(max_epoch):  # loop over the dataset multiple times
 
         running_loss = 0.0
-        for i, data in enumerate(train_Loader, 0):
+        for iter, data in enumerate(train_Loader):
             
             # start.record()
             torch.cuda.synchronize()
-            start = time()*1000
+            start = time.time()*1000
 
             # get the inputs; data is a list of [inputs, labels]
             # inputs, labels = data
@@ -87,7 +113,7 @@ def train(net, train_Loader, device, max_epoch, display_interval, epoch_size):
             # end.record()
             # torch.cuda.synchronize()
             torch.cuda.synchronize()
-            end = time()*1000
+            end = time.time()*1000
 
             # num_iterations += 1
             # batch_time.append(start.elapsed_time(end))
@@ -95,36 +121,58 @@ def train(net, train_Loader, device, max_epoch, display_interval, epoch_size):
 
             # print statistics
             running_loss += loss.item()
-            if i % display_interval == (display_interval - 1):  # print every 'display_interval' mini-batches
-                print(log_str.format(epoch, max_epoch, i + 1, 
+            if iter % display_interval == (display_interval - 1):  # print every 'display_interval' mini-batches
+                outputManage.output(log_str.format(epoch, max_epoch, iter + 1, 
                                     running_loss / display_interval, 
                                     np.mean(batch_time)))
                 batch_time = []
                 running_loss = 0.0
 
-    print('{}: Training Finished  '.format(GetCurrentTime()))
+        # Validation
+        if epoch % val_interval == (val_interval - 1):
+            accuracy = val(net, val_Loader, device, outputManage)
+            if accuracy > best_acc:
+                best_acc = accuracy
+                best_ep = epoch
+                torch.save(net.state_dict(), best_model_path)
+
+            outputManage.output(best_model_message.format(best_ep, best_acc) + '\n')
+
+
+    outputManage.output('{}: Training Finished  '.format(GetCurrentTime()))
+    best_acc = round(best_acc, 4)
+    with open(os.path.split(best_model_path)[0] + '/Best_model_{}_{}.txt'.format(best_ep, best_acc), 'w') as fObj:
+        fObj.writelines("{}\t{}".format(best_ep, best_acc))
 
 
 def main():
     
-    rootPath = "D:/Dataset/Classification/cifar10/"
+    rootPath = "E:/Dataset/Classification/cifar10/"
     imgPath = rootPath + "_Images/"
     train_fListPath = rootPath + "train.txt"
     val_fListPath = rootPath + "val.txt"
 
-    model_path = "D:/Coding/pytorch/project/Classification_Pytorch/model/"
-    model_dir = model_path + 'cifar_net_gpu_custom.pth'
+    model_name = "VGG16"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/"
+    best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
-    batch_size_train = 10
-    batch_size_val = 2
-    max_epoch = 2
-    display_interval = 50
+    batch_size_train = 400
+    batch_size_val = 100
+    max_epoch = 100
+    display_interval = 25
+    val_interval = 10
 
     #--------------------------------------------------------------------------------------------------------#
 
-    # 1. Loading and normalizing Custom cifar10 dataset
-    print("Setup dataset ...")
+    # Setup output information 
+    os.makedirs(save_folder, exist_ok=True)
+    log_file_path = os.path.join(save_folder, model_name + time.strftime('_%Y-%m-%d-%H-%M', time.localtime(time.time())) + '.log')
+    
+    outputManage = OutputManager(log_file_path)
+
+    # Loading and normalizing Custom cifar10 dataset
+    outputManage.output("Setup dataset ...")
     transform = transforms.Compose(
         [transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -135,28 +183,29 @@ def main():
     val_Loader = DataLoader(val_Dataset, batch_size=batch_size_val, shuffle=False, num_workers=0)
 
     num_train = len(train_Dataset)
-#    num_val = len(val_Dataset)
-    
     epoch_size = num_train // batch_size_train
     
-    print("Create Model ...")
-    net = VGG.VGG16(num_classes, init_weights=True)
+    # Setup model
+    outputManage.output("Create Model ...")
+    if model_name=="VGG16":
+        net = VGG.VGG16(num_classes, init_weights=True)
+    elif model_name=="VGG19":
+        net = VGG.VGG19(num_classes, init_weights=True)
+    else:
+        raise ValueError("Not support \"{}\"".format(model_name))
 
-    # Training on GPU
+
+    # Setup GPU
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
-        print(" - GPU is available -> use GPU")
+        outputManage.output(" - GPU is available -> use GPU")
     else:
         device = torch.device("cpu")
-        print(" - GPU is not available -> use GPU")
+        outputManage.output(" - GPU is not available -> use GPU")
 
     net.to(device)
     
-    train(net, train_Loader, device, max_epoch, display_interval, epoch_size)
-    val(net, val_Loader, device)
-    
-    os.makedirs(model_path, exist_ok=True)
-    torch.save(net.state_dict(), model_dir)
+    train(net, train_Loader, val_Loader, device, max_epoch, display_interval, epoch_size, val_interval, outputManage, best_model_path)
 
 #--------------------------------------------------------------------------------------------------------#  
     

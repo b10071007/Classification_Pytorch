@@ -2,7 +2,8 @@ import os
 
 import torch
 from torch.utils.data import Dataset
-from skimage import io
+# from skimage import io
+from PIL import Image
 
 # ------------------------------------------------------------------------------#
 
@@ -56,7 +57,8 @@ class ClassifyDataset(Dataset):
             idx = idx.tolist()
 
         img_name = os.path.join(self.imgPath, self.fList[idx])
-        image = io.imread(img_name)
+        # image = io.imread(img_name)
+        image = Image.open(img_name)
         label = torch.tensor(int(self.labels[idx]))
 
         if self.transform:

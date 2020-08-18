@@ -17,6 +17,20 @@ from models import VGG
 
 #--------------------------------------------------------------------------------------------------------#
 
+# Setup settings and hyper-parameter
+class Setting():
+    def __init__(self, num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval,
+                 base_lr, gamma, lr_decay_steps):
+        self.num_classes = num_classes
+        self.batch_size_train = batch_size_train
+        self.batch_size_val = batch_size_val
+        self.max_epoch = max_epoch
+        self.display_interval = display_interval
+        self.val_interval = val_interval
+        self.base_lr = base_lr
+        self.gamma = gamma
+        self.lr_decay_steps = lr_decay_steps
+
 # setup output manager
 class OutputManager():
     def __init__(self, log_file_path):
@@ -33,9 +47,15 @@ class OutputManager():
         self.log_file.close()
 
 #--------------------------------------------------------------------------------------------------------#
-        
+
 def GetCurrentTime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+def adjust_learning_rate(optimizer, base_lr, gamma, step_index):
+    lr = base_lr * (gamma ** (step_index))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return lr
 
 def val(net, val_Loader, device, outputManage):
     outputManage.output("Start validation")
@@ -75,20 +95,29 @@ def val(net, val_Loader, device, outputManage):
     #     print( 'Accuracy of %5s : %2d %%' % (i, 100 * class_correct[i] / class_total[i]) )
 
 
-def train(net, train_Loader, val_Loader, device, max_epoch, display_interval, epoch_size, val_interval, outputManage, best_model_path):
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
+def train(net, train_Loader, val_Loader, device, setting, epoch_size, outputManage, best_model_path):
     
+    # Setup output messages
     batch_time = []
-    log_str = "Epoch: [{:3d}/{:3d}] Iterations: {:4d} Loss: {:.3f} Batch_time: {:.2f} ms"
+    log_str = "Epoch: [{:3d}/{:3d}] Iterations: {:3d} Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
+    # Setup Best model saving
     print('{}: Start Training '.format(GetCurrentTime()))
     best_ep = 0
     best_acc = 0
     best_model_message = "Best model until now:\n - epoch={}\n - Accuracy={}"
 
-    for epoch in range(max_epoch):  # loop over the dataset multiple times
+    # Setup optimizer
+    step_index = 0
+    lr = setting.base_lr
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+
+    for epoch in range(setting.max_epoch):  # loop over the dataset multiple times
+        
+        if (epoch+1) in setting.lr_decay_steps:
+            step_index += 1
+            lr = adjust_learning_rate(optimizer, setting.base_lr, setting.gamma, step_index)
 
         running_loss = 0.0
         for iter, data in enumerate(train_Loader):
@@ -121,15 +150,14 @@ def train(net, train_Loader, val_Loader, device, max_epoch, display_interval, ep
 
             # print statistics
             running_loss += loss.item()
-            if iter % display_interval == (display_interval - 1):  # print every 'display_interval' mini-batches
-                outputManage.output(log_str.format(epoch, max_epoch, iter + 1, 
-                                    running_loss / display_interval, 
-                                    np.mean(batch_time)))
+            if iter % setting.display_interval == (setting.display_interval - 1):  # print every 'display_interval' mini-batches
+                outputManage.output(
+                    log_str.format(epoch+1, setting.max_epoch, iter + 1, running_loss / setting.display_interval, np.mean(batch_time), lr))
                 batch_time = []
                 running_loss = 0.0
 
         # Validation
-        if epoch % val_interval == (val_interval - 1):
+        if (epoch+1) % setting.val_interval == (setting.val_interval - 1):
             accuracy = val(net, val_Loader, device, outputManage)
             if accuracy > best_acc:
                 best_acc = accuracy
@@ -147,13 +175,13 @@ def train(net, train_Loader, val_Loader, device, max_epoch, display_interval, ep
 
 def main():
     
-    rootPath = "E:/Dataset/Classification/cifar10/"
+    rootPath = "D:/Dataset/Classification/cifar10/"
     imgPath = rootPath + "_Images/"
     train_fListPath = rootPath + "train.txt"
     val_fListPath = rootPath + "val.txt"
 
     model_name = "VGG16"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/aug_LRdecay/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -163,7 +191,14 @@ def main():
     display_interval = 25
     val_interval = 10
 
+    base_lr = 0.01
+    gamma = 0.2
+    lr_decay_steps = [50,80]
+
     #--------------------------------------------------------------------------------------------------------#
+
+    setting = Setting(num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval, 
+                      base_lr, gamma, lr_decay_steps)
 
     # Setup output information 
     os.makedirs(save_folder, exist_ok=True)
@@ -174,12 +209,22 @@ def main():
     # Loading and normalizing Custom cifar10 dataset
     outputManage.output("Setup dataset ...")
     transform = transforms.Compose(
-        [transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        [transforms.Resize(size=(60,60)),
+         transforms.RandomHorizontalFlip(),
+         transforms.RandomVerticalFlip(),
+         transforms.RandomCrop(size=(48,48)),
+         transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+    transform_val = transforms.Compose(
+        [transforms.Resize(size=(60,60)),
+         transforms.CenterCrop(size=(54,54)),
+         transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     train_Dataset = cDataset.ClassifyDataset(train_fListPath, imgPath, transform=transform)
     train_Loader = DataLoader(train_Dataset, batch_size=batch_size_train, shuffle=True, num_workers=0)
-    val_Dataset = cDataset.ClassifyDataset(val_fListPath, imgPath, transform=transform)
+    val_Dataset = cDataset.ClassifyDataset(val_fListPath, imgPath, transform=transform_val)
     val_Loader = DataLoader(val_Dataset, batch_size=batch_size_val, shuffle=False, num_workers=0)
 
     num_train = len(train_Dataset)
@@ -188,9 +233,9 @@ def main():
     # Setup model
     outputManage.output("Create Model ...")
     if model_name=="VGG16":
-        net = VGG.VGG16(num_classes, init_weights=True)
+        net = VGG.VGG16(setting.num_classes, init_weights=True)
     elif model_name=="VGG19":
-        net = VGG.VGG19(num_classes, init_weights=True)
+        net = VGG.VGG19(setting.num_classes, init_weights=True)
     else:
         raise ValueError("Not support \"{}\"".format(model_name))
 
@@ -205,7 +250,7 @@ def main():
 
     net.to(device)
     
-    train(net, train_Loader, val_Loader, device, max_epoch, display_interval, epoch_size, val_interval, outputManage, best_model_path)
+    train(net, train_Loader, val_Loader, device, setting, epoch_size, outputManage, best_model_path)
 
 #--------------------------------------------------------------------------------------------------------#  
     

@@ -13,14 +13,14 @@ import torchvision.transforms as transforms
 import sys
 sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-from models import VGG
+from models import VGG, ResNet
 
 #--------------------------------------------------------------------------------------------------------#
 
 # Setup settings and hyper-parameter
 class Setting():
     def __init__(self, num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval,
-                 base_lr, gamma, lr_decay_steps):
+                 base_lr, gamma, lr_decay_steps, warm_epoch):
         self.num_classes = num_classes
         self.batch_size_train = batch_size_train
         self.batch_size_val = batch_size_val
@@ -30,6 +30,7 @@ class Setting():
         self.base_lr = base_lr
         self.gamma = gamma
         self.lr_decay_steps = lr_decay_steps
+        self.warm_epoch = warm_epoch
 
 # setup output manager
 class OutputManager():
@@ -51,10 +52,17 @@ class OutputManager():
 def GetCurrentTime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def adjust_learning_rate(optimizer, base_lr, gamma, step_index):
-    lr = base_lr * (gamma ** (step_index))
+def adjust_learning_rate(optimizer, base_lr, gamma, step_index, 
+                         epoch, warm_epoch, iteration, epoch_iters):
+    if epoch < warm_epoch: # warm up
+        total_iteration = epoch_iters*epoch + iteration
+        lr = 1e-6 + (base_lr - 1e-6) * total_iteration / (epoch_iters * warm_epoch)
+    else:
+        lr = base_lr * (gamma ** (step_index))
+
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
     return lr
 
 def val(net, val_Loader, device, outputManage):
@@ -95,11 +103,11 @@ def val(net, val_Loader, device, outputManage):
     #     print( 'Accuracy of %5s : %2d %%' % (i, 100 * class_correct[i] / class_total[i]) )
 
 
-def train(net, train_Loader, val_Loader, device, setting, epoch_size, outputManage, best_model_path):
+def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputManage, best_model_path):
     
     # Setup output messages
     batch_time = []
-    log_str = "Epoch: [{:3d}/{:3d}] Iterations: {:3d} Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
+    log_str = "Epoch: [{:3d}/{:3d}] Iterations: [{:3d}/{:3d}] Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
     # Setup Best model saving
     print('{}: Start Training '.format(GetCurrentTime()))
@@ -117,11 +125,13 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_size, outputMana
         
         if (epoch+1) in setting.lr_decay_steps:
             step_index += 1
-            lr = adjust_learning_rate(optimizer, setting.base_lr, setting.gamma, step_index)
 
         running_loss = 0.0
-        for iter, data in enumerate(train_Loader):
+        for iteration, data in enumerate(train_Loader):
             
+            lr = adjust_learning_rate(optimizer, setting.base_lr, setting.gamma, step_index, 
+                                      epoch, setting.warm_epoch, iteration, epoch_iters)
+
             # start.record()
             torch.cuda.synchronize()
             start = time.time()*1000
@@ -150,9 +160,9 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_size, outputMana
 
             # print statistics
             running_loss += loss.item()
-            if iter % setting.display_interval == (setting.display_interval - 1):  # print every 'display_interval' mini-batches
+            if iteration % setting.display_interval == (setting.display_interval - 1):  # print every 'display_interval' mini-batches
                 outputManage.output(
-                    log_str.format(epoch+1, setting.max_epoch, iter + 1, running_loss / setting.display_interval, np.mean(batch_time), lr))
+                    log_str.format(epoch+1, setting.max_epoch, iteration + 1, epoch_iters, running_loss / setting.display_interval, np.mean(batch_time), lr))
                 batch_time = []
                 running_loss = 0.0
 
@@ -180,31 +190,40 @@ def main():
     train_fListPath = rootPath + "train.txt"
     val_fListPath = rootPath + "val.txt"
 
-    model_name = "VGG16"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/aug_LRdecay/"
+    model_name = "ResNet50"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/ResNet50_origWrong/aug_LRdecay_bs128_ep200_warm_lr0.05_gamma0.1/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
-    batch_size_train = 400
+    batch_size_train = 128
     batch_size_val = 100
-    max_epoch = 100
-    display_interval = 25
+    max_epoch = 200
+    display_interval = 100
     val_interval = 10
 
-    base_lr = 0.01
-    gamma = 0.2
-    lr_decay_steps = [50,80]
+    base_lr = 0.05 # 0.01
+    gamma = 0.1
+    lr_decay_steps = [80, 120] # [80]
+    warm_epoch = 5
 
     #--------------------------------------------------------------------------------------------------------#
 
     setting = Setting(num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval, 
-                      base_lr, gamma, lr_decay_steps)
+                      base_lr, gamma, lr_decay_steps, warm_epoch)
 
     # Setup output information 
     os.makedirs(save_folder, exist_ok=True)
     log_file_path = os.path.join(save_folder, model_name + time.strftime('_%Y-%m-%d-%H-%M', time.localtime(time.time())) + '.log')
     
     outputManage = OutputManager(log_file_path)
+
+    outputManage.output("\nHyper-parameter setting:")
+    lr_decay_steps_str = "["
+    for s in lr_decay_steps: lr_decay_steps_str += (str(s) + ",")
+    lr_decay_steps_str = lr_decay_steps_str[:-1] + "]"
+
+    outputManage.output(" - lr = {}\n - gamma = {}\n - lr_decay_steps = {}\n - batch_size = {}\n - max_epoch = {}\n".format(
+        base_lr, gamma, lr_decay_steps_str, batch_size_train, max_epoch))
 
     # Loading and normalizing Custom cifar10 dataset
     outputManage.output("Setup dataset ...")
@@ -214,13 +233,17 @@ def main():
          transforms.RandomVerticalFlip(),
          transforms.RandomCrop(size=(48,48)),
          transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        #  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+         ])
 
     transform_val = transforms.Compose(
         [transforms.Resize(size=(60,60)),
          transforms.CenterCrop(size=(54,54)),
          transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        #  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+         ])
 
     train_Dataset = cDataset.ClassifyDataset(train_fListPath, imgPath, transform=transform)
     train_Loader = DataLoader(train_Dataset, batch_size=batch_size_train, shuffle=True, num_workers=0)
@@ -228,14 +251,21 @@ def main():
     val_Loader = DataLoader(val_Dataset, batch_size=batch_size_val, shuffle=False, num_workers=0)
 
     num_train = len(train_Dataset)
-    epoch_size = num_train // batch_size_train
+    epoch_iters = num_train // batch_size_train
     
     # Setup model
-    outputManage.output("Create Model ...")
+    outputManage.output("Create Model: {}".format(model_name))
     if model_name=="VGG16":
         net = VGG.VGG16(setting.num_classes, init_weights=True)
     elif model_name=="VGG19":
         net = VGG.VGG19(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet50":
+        net = ResNet.ResNet50(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet101":
+        net =  ResNet.ResNet101(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet50_official":
+        import torchvision.models as models
+        net = models.resnet50()
     else:
         raise ValueError("Not support \"{}\"".format(model_name))
 
@@ -250,7 +280,7 @@ def main():
 
     net.to(device)
     
-    train(net, train_Loader, val_Loader, device, setting, epoch_size, outputManage, best_model_path)
+    train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputManage, best_model_path)
 
 #--------------------------------------------------------------------------------------------------------#  
     

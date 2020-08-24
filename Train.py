@@ -48,7 +48,7 @@ class OutputManager():
         self.log_file.close()
 
 #--------------------------------------------------------------------------------------------------------#
-
+        
 def GetCurrentTime():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -105,11 +105,9 @@ def val(net, val_Loader, device, outputManage):
 
 def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputManage, best_model_path):
     
-    # Setup output messages
     batch_time = []
     log_str = "Epoch: [{:3d}/{:3d}] Iterations: [{:3d}/{:3d}] Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
-    # Setup Best model saving
     print('{}: Start Training '.format(GetCurrentTime()))
     best_ep = 0
     best_acc = 0
@@ -167,7 +165,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
                 running_loss = 0.0
 
         # Validation
-        if (epoch+1) % setting.val_interval == (setting.val_interval - 1):
+        if epoch % val_interval == (val_interval - 1):
             accuracy = val(net, val_Loader, device, outputManage)
             if accuracy > best_acc:
                 best_acc = accuracy
@@ -185,13 +183,13 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
 
 def main():
     
-    rootPath = "D:/Dataset/Classification/cifar10/"
+    rootPath = "E:/Dataset/Classification/cifar10/"
     imgPath = rootPath + "_Images/"
     train_fListPath = rootPath + "train.txt"
     val_fListPath = rootPath + "val.txt"
 
     model_name = "ResNet50"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/ResNet50_origWrong/aug_LRdecay_bs128_ep200_warm_lr0.05_gamma0.1/"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/ResNet50/aug_LRdecay_bs128_ep200_warm_lr0.1_gamma0.1/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -201,7 +199,7 @@ def main():
     display_interval = 100
     val_interval = 10
 
-    base_lr = 0.05 # 0.01
+    base_lr = 0.1 # 0.01
     gamma = 0.1
     lr_decay_steps = [80, 120] # [80]
     warm_epoch = 5
@@ -247,7 +245,7 @@ def main():
 
     train_Dataset = cDataset.ClassifyDataset(train_fListPath, imgPath, transform=transform)
     train_Loader = DataLoader(train_Dataset, batch_size=batch_size_train, shuffle=True, num_workers=0)
-    val_Dataset = cDataset.ClassifyDataset(val_fListPath, imgPath, transform=transform_val)
+    val_Dataset = cDataset.ClassifyDataset(val_fListPath, imgPath, transform=transform)
     val_Loader = DataLoader(val_Dataset, batch_size=batch_size_val, shuffle=False, num_workers=0)
 
     num_train = len(train_Dataset)
@@ -256,7 +254,7 @@ def main():
     # Setup model
     outputManage.output("Create Model: {}".format(model_name))
     if model_name=="VGG16":
-        net = VGG.VGG16(setting.num_classes, init_weights=True)
+        net = VGG.VGG16(num_classes, init_weights=True)
     elif model_name=="VGG19":
         net = VGG.VGG19(setting.num_classes, init_weights=True)
     elif model_name=="ResNet50":

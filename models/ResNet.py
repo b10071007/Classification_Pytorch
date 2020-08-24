@@ -22,7 +22,7 @@ class ResBlock(nn.Module):
 
         self.convs = nn.Sequential(
             # conv 1x1
-            nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=1, padding=1, bias=self.bias),
+            nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=1, bias=self.bias),
             nn.BatchNorm2d(out_channel),
             nn.ReLU(inplace=True),
             # conv 3x3
@@ -30,8 +30,8 @@ class ResBlock(nn.Module):
             nn.BatchNorm2d(out_channel),
             nn.ReLU(inplace=True),
             # conv 1x1
-            nn.Conv2d(out_channel, out_channel*4, kernel_size=1, stride=1, padding=1, bias=self.bias),
-            nn.BatchNorm2d(out_channel),
+            nn.Conv2d(out_channel, out_channel*4, kernel_size=1, stride=1, bias=self.bias),
+            nn.BatchNorm2d(out_channel*4),
             nn.ReLU(inplace=True),
         )
 
@@ -52,12 +52,12 @@ class ResBlock(nn.Module):
 
 def ResGroup(in_channel, out_channel, num_blocks=2):
 
-    in_channel_current = in_channel
     layers = []
-    layers.append(ResBlock(in_channel, out_channel))
+    layers.append(ResBlock(in_channel, out_channel, True))
+    in_channel_current = out_channel*4
     for i in range(1, num_blocks):
-        layers.append(ResBlock(in_channel_current, out_channel))
-        in_channel_current = out_channel*4
+        layers.append(ResBlock(in_channel_current, out_channel, False))
+        
 
     return nn.Sequential(*layers)
 
@@ -72,39 +72,40 @@ class ResNet(nn.Module):
             nn.BatchNorm2d(conv_channels[0]),
             nn.ReLU(inplace=True),
         )
-        self.maxpool =  nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        # self.maxpool =  nn.MaxPool2d(kernel_size=1, stride=1, padding=1)
+        # self.maxpool =  nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.maxpool = nn.Sequential()
 
         self.group1 = ResGroup(conv_channels[0], conv_channels[0], num_blocks[0])
-        self.group2 = ResGroup(conv_channels[0], conv_channels[1], num_blocks[1])
-        self.group3 = ResGroup(conv_channels[1], conv_channels[2], num_blocks[2])
-        self.group4 = ResGroup(conv_channels[2], conv_channels[3], num_blocks[3])
+        self.group2 = ResGroup(conv_channels[0]*4, conv_channels[1], num_blocks[1])
+        self.group3 = ResGroup(conv_channels[1]*4, conv_channels[2], num_blocks[2])
+        self.group4 = ResGroup(conv_channels[2]*4, conv_channels[3], num_blocks[3])
         
-        self.avgpool = nn.AvgPool2d(7, stride=1)
-        self.fc = nn.Linear(2048, num_classes)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(conv_channels[3]*4, num_classes)
 
         if init_weights:
             self._initialize_weights()
         
     def forward(self, x):
         x = self.conv1(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.maxpool(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.group1(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.group2(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.group3(x)
-        print(x.shape)
+        # print(x.shape)
         x = self.group4(x)
-        print(x.shape)
+        # print(x.shape)
 
         x = self.avgpool(x)
-        print(x.shape)
+        # print(x.shape)
+        x = x.view(x.size(0), -1)
+        # print(x.shape)
         x = self.fc(x)
-        print(x.shape)
-        exit()
+
         return x
     
     def _initialize_weights(self):

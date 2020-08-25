@@ -121,6 +121,7 @@ class ResNet(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
+#---------------------------------------------------------------------------------------------------------------#
 
 def ResNet50(num_classes=10, init_weights=True):
     return ResNet(num_classes, num_blocks=[3, 4, 6, 3], conv_channels=[64, 128, 256, 512], init_weights=True)

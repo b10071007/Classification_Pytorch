@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 import sys
 sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-from models import VGG, ResNet
+from models import VGG, ResNet, WideResNet
 
 #--------------------------------------------------------------------------------------------------------#
 
@@ -165,7 +165,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
                 running_loss = 0.0
 
         # Validation
-        if epoch % val_interval == (val_interval - 1):
+        if epoch % setting.val_interval == (setting.val_interval - 1):
             accuracy = val(net, val_Loader, device, outputManage)
             if accuracy > best_acc:
                 best_acc = accuracy
@@ -188,8 +188,8 @@ def main():
     train_fListPath = rootPath + "train.txt"
     val_fListPath = rootPath + "val.txt"
 
-    model_name = "ResNet50"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/ResNet50/aug_LRdecay_bs128_ep200_warm_lr0.1_gamma0.1/"
+    model_name = "WRN_N4_k10"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/WRN_N4_k10/aug_LRdecay_bs128_ep200_warm5_lr0.1_gamma0.2/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -200,8 +200,8 @@ def main():
     val_interval = 10
 
     base_lr = 0.1 # 0.01
-    gamma = 0.1
-    lr_decay_steps = [80, 120] # [80]
+    gamma = 0.2
+    lr_decay_steps = [60,120,160] #[80, 120] # [80]
     warm_epoch = 5
 
     #--------------------------------------------------------------------------------------------------------#
@@ -264,6 +264,10 @@ def main():
     elif model_name=="ResNet50_official":
         import torchvision.models as models
         net = models.resnet50()
+    elif model_name=="WRN_N4_k4":
+        net = WideResNet.WRN_N4_k4(setting.num_classes, init_weights=True)
+    elif model_name=="WRN_N4_k10":
+        net = WideResNet.WRN_N4_k10(setting.num_classes, init_weights=True)
     else:
         raise ValueError("Not support \"{}\"".format(model_name))
 

@@ -88,22 +88,15 @@ class ResNet(nn.Module):
         
     def forward(self, x):
         x = self.conv1(x)
-        # print(x.shape)
         x = self.maxpool(x)
-        # print(x.shape)
+
         x = self.group1(x)
-        # print(x.shape)
         x = self.group2(x)
-        # print(x.shape)
         x = self.group3(x)
-        # print(x.shape)
         x = self.group4(x)
-        # print(x.shape)
 
         x = self.avgpool(x)
-        # print(x.shape)
         x = x.view(x.size(0), -1)
-        # print(x.shape)
         x = self.fc(x)
 
         return x
@@ -129,10 +122,3 @@ def ResNet50(num_classes=10, init_weights=True):
 def ResNet101(num_classes=10, init_weights=True):
     return ResNet(num_classes, num_blocks=[3, 4, 23, 3], conv_channels=[64, 128, 256, 512], init_weights=True)
 
-
-
-# num_classes = 10
-# init_weights = True
-
-# model = ResNet50(num_classes, init_weights)
-# print(model)

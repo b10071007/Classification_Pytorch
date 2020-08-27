@@ -117,7 +117,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     step_index = 0
     lr = setting.base_lr
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0005)
 
     for epoch in range(setting.max_epoch):  # loop over the dataset multiple times
         
@@ -189,7 +189,7 @@ def main():
     val_fListPath = rootPath + "val.txt"
 
     model_name = "WRN_N4_k10"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/WRN_N4_k10/aug_LRdecay_bs128_ep200_warm5_lr0.1_gamma0.2/"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/WRN_N4_k10/bs128_ep200_warm5_lr0.1_gamma0.2_nesterov_wdecay0.0005_augImitate/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -198,6 +198,7 @@ def main():
     max_epoch = 200
     display_interval = 100
     val_interval = 10
+
 
     base_lr = 0.1 # 0.01
     gamma = 0.2
@@ -226,17 +227,20 @@ def main():
     # Loading and normalizing Custom cifar10 dataset
     outputManage.output("Setup dataset ...")
     transform = transforms.Compose(
-        [transforms.Resize(size=(60,60)),
+        [
+         transforms.Resize(size=(60,60)),
+         transforms.RandomCrop(size=(48,48)),
+        #  transforms.RandomCrop(size=(32,32), padding=4),
          transforms.RandomHorizontalFlip(),
          transforms.RandomVerticalFlip(),
-         transforms.RandomCrop(size=(48,48)),
          transforms.ToTensor(),
         #  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
          transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
          ])
 
     transform_val = transforms.Compose(
-        [transforms.Resize(size=(60,60)),
+        [
+         transforms.Resize(size=(60,60)),
          transforms.CenterCrop(size=(54,54)),
          transforms.ToTensor(),
         #  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
@@ -245,7 +249,7 @@ def main():
 
     train_Dataset = cDataset.ClassifyDataset(train_fListPath, imgPath, transform=transform)
     train_Loader = DataLoader(train_Dataset, batch_size=batch_size_train, shuffle=True, num_workers=0)
-    val_Dataset = cDataset.ClassifyDataset(val_fListPath, imgPath, transform=transform)
+    val_Dataset = cDataset.ClassifyDataset(val_fListPath, imgPath, transform=transform_val)
     val_Loader = DataLoader(val_Dataset, batch_size=batch_size_val, shuffle=False, num_workers=0)
 
     num_train = len(train_Dataset)

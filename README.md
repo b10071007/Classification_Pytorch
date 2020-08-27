@@ -1,15 +1,16 @@
-# ClassificationPractice
-Practice Classification on Pytorch
+# Classification_Pytorch
+Classification on cifar-10 or any other dataset on Pytorch
 
-1. Train_cifar10.py
-    * Train very simple Classifier on Cifar-10 by CPU.
-    * Dataset is downloaded and implemented by touchvision
-2. Train_cifar10_gpu.py
-    * Train very simple Classifier on Cifar-10 by GPU.
-    * Dataset is downloaded and implemented by touchvision
-3. Train_CustomDataset.py
-    * Train very simple Classifier on Cifar-10 by GPU.
-    * Dataset class is implemented by myself
-    
+### Supported Architectures
+- VGG
+- ResNet_v1
+- WideResNet
+
+### Supported Training details
+- Step Learning Rate Decay
+- Learning Rate Warm Up
+- Model Selection based on the validation accuracy
+- Data Augmentation
+    - Resize, Random Crop, Horizontal and Vertical Flip
 
 

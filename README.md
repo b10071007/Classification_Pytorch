@@ -1,5 +1,5 @@
 # Classification_Pytorch
-Classification on cifar-10 or any other dataset on Pytorch
+Classification on cifar-10 or any other dataset with Pytorch
 
 ### Supported Architectures
 - VGG

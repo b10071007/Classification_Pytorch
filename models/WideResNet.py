@@ -69,6 +69,9 @@ class WideResNet(nn.Module):
         self.group2 = WideResGroup(in_channel=base_channel*k, out_channel=base_channel*2*k, N=N, first_downsample=True)
         self.group3 = WideResGroup(in_channel=base_channel*2*k, out_channel=base_channel*4*k, N=N, first_downsample=True)
         
+        self.bn_last = nn.BatchNorm2d(base_channel*4*k)
+        self.relu_last = nn.ReLU(inplace=True)
+
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(base_channel*4*k, num_classes)
 
@@ -77,20 +80,16 @@ class WideResNet(nn.Module):
         
     def forward(self, x):
         x = self.conv1(x)
-        # print(x.shape)
         x = self.maxpool(x)
-        # print(x.shape)
-        x = self.group1(x)
-        # print(x.shape)
-        x = self.group2(x)
-        # print(x.shape)
-        x = self.group3(x)
-        # print(x.shape)
 
+        x = self.group1(x)
+        x = self.group2(x)
+        x = self.group3(x)
+
+        x = self.relu_last(self.bn_last(x))
         x = self.avgpool(x)
-        # print(x.shape)
+
         x = x.view(x.size(0), -1)
-        # print(x.shape)
         x = self.fc(x)
 
         return x

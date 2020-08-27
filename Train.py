@@ -20,7 +20,7 @@ from models import VGG, ResNet, WideResNet
 # Setup settings and hyper-parameter
 class Setting():
     def __init__(self, num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval,
-                 base_lr, gamma, lr_decay_steps, warm_epoch):
+                 base_lr, gamma, lr_decay_steps, warm_epoch, nesterov):
         self.num_classes = num_classes
         self.batch_size_train = batch_size_train
         self.batch_size_val = batch_size_val
@@ -31,6 +31,7 @@ class Setting():
         self.gamma = gamma
         self.lr_decay_steps = lr_decay_steps
         self.warm_epoch = warm_epoch
+        self.nesterov = nesterov
 
 # setup output manager
 class OutputManager():
@@ -108,7 +109,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     batch_time = []
     log_str = "Epoch: [{:3d}/{:3d}] Iterations: [{:3d}/{:3d}] Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
-    print('{}: Start Training '.format(GetCurrentTime()))
+    outputManage.output('{}: Start Training '.format(GetCurrentTime()))
     best_ep = 0
     best_acc = 0
     best_model_message = "Best model until now:\n - epoch={}\n - Accuracy={}"
@@ -117,7 +118,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     step_index = 0
     lr = setting.base_lr
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, nesterov=True, weight_decay=0.0005)
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, nesterov=setting.nesterov, weight_decay=0.0005)
 
     for epoch in range(setting.max_epoch):  # loop over the dataset multiple times
         
@@ -189,7 +190,7 @@ def main():
     val_fListPath = rootPath + "val.txt"
 
     model_name = "WRN_N4_k10"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/WRN_N4_k10/bs128_ep200_warm5_lr0.1_gamma0.2_nesterov_wdecay0.0005_augImitate/"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/WRN_N4_k4/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -204,11 +205,12 @@ def main():
     gamma = 0.2
     lr_decay_steps = [60,120,160] #[80, 120] # [80]
     warm_epoch = 5
+    nesterov = False
 
     #--------------------------------------------------------------------------------------------------------#
 
     setting = Setting(num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval, 
-                      base_lr, gamma, lr_decay_steps, warm_epoch)
+                      base_lr, gamma, lr_decay_steps, warm_epoch, nesterov)
 
     # Setup output information 
     os.makedirs(save_folder, exist_ok=True)
@@ -248,9 +250,9 @@ def main():
          ])
 
     train_Dataset = cDataset.ClassifyDataset(train_fListPath, imgPath, transform=transform)
-    train_Loader = DataLoader(train_Dataset, batch_size=batch_size_train, shuffle=True, num_workers=0)
+    train_Loader = DataLoader(train_Dataset, batch_size=batch_size_train, shuffle=True, num_workers=2)
     val_Dataset = cDataset.ClassifyDataset(val_fListPath, imgPath, transform=transform_val)
-    val_Loader = DataLoader(val_Dataset, batch_size=batch_size_val, shuffle=False, num_workers=0)
+    val_Loader = DataLoader(val_Dataset, batch_size=batch_size_val, shuffle=False, num_workers=2)
 
     num_train = len(train_Dataset)
     epoch_iters = num_train // batch_size_train

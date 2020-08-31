@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 import sys
 sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-from models import VGG, ResNet, WideResNet
+from models import VGG, ResNet, WideResNet, ResNet_v2
 
 #--------------------------------------------------------------------------------------------------------#
 
@@ -189,8 +189,8 @@ def main():
     train_fListPath = rootPath + "train.txt"
     val_fListPath = rootPath + "val.txt"
 
-    model_name = "WRN_N4_k10"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/WRN_N4_k4/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
+    model_name = "ResNet50_v2"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/ResNet50_v2/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -259,10 +259,12 @@ def main():
     
     # Setup model
     outputManage.output("Create Model: {}".format(model_name))
+
     if model_name=="VGG16":
         net = VGG.VGG16(num_classes, init_weights=True)
     elif model_name=="VGG19":
         net = VGG.VGG19(setting.num_classes, init_weights=True)
+
     elif model_name=="ResNet50":
         net = ResNet.ResNet50(setting.num_classes, init_weights=True)
     elif model_name=="ResNet101":
@@ -270,6 +272,18 @@ def main():
     elif model_name=="ResNet50_official":
         import torchvision.models as models
         net = models.resnet50()
+
+    elif model_name=="ResNet18_v2":
+        net = ResNet_v2.ResNet18_v2(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet34_v2":
+        net =  net = ResNet_v2.ResNet34_v2(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet50_v2":
+        net = ResNet_v2.ResNet50_v2(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet101_v2":
+        net =  net = ResNet_v2.ResNet101_v2(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet152_v2":
+        net =  net = ResNet_v2.ResNet152_v2(setting.num_classes, init_weights=True)     
+
     elif model_name=="WRN_N4_k4":
         net = WideResNet.WRN_N4_k4(setting.num_classes, init_weights=True)
     elif model_name=="WRN_N4_k10":

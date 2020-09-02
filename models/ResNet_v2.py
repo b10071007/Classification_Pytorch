@@ -8,66 +8,53 @@ import torch.nn as nn
 
 class ResBlock(nn.Module):
     expansion = 1
-    def __init__(self, in_channel, out_channel, downsample = False):
+    def __init__(self, in_channel, out_channel, stride = 1):
         super(ResBlock,self).__init__()
-        # self.expansion = 1
-        self.downsample = downsample
-        self.bias = False
-        
-        if self.downsample:
-            self.downsample_shortcut = nn.Sequential(
-                nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=2, bias=self.bias),
-                nn.BatchNorm2d(out_channel)
-            )
-            self.stride_conv3x3 = 2
-        else:
-            self.stride_conv3x3 = 1
+        self.expansion = 1
+       
+        self.downsample_shortcut =  nn.Sequential()
+        self.stride = stride
 
+        if (in_channel!=out_channel*self.expansion):
+            self.downsample_shortcut = nn.Sequential(
+                nn.Conv2d(in_channel, out_channel*self.expansion, kernel_size=1, stride=self.stride, bias=self.bias)
+            )
 
         self.convs = nn.Sequential(
             # conv 3x3
             nn.BatchNorm2d(in_channel),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channel, out_channel, kernel_size=3, stride=self.stride_conv3x3, padding=1, bias=self.bias),
+            nn.Conv2d(in_channel, out_channel, kernel_size=3, stride=self.stride, padding=1, bias=self.bias),
             # conv 3x3
             nn.BatchNorm2d(out_channel),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=1, padding=1, bias=self.bias),
         )
-        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         shortcut = x
 
         x = self.convs(x)
-
-        if self.downsample:
-            shortcut = self.downsample_shortcut(shortcut)
-
+        shortcut = self.downsample_shortcut(shortcut)
         x = x + shortcut
-        x = self.relu(x)
 
         return x
 
 class ResBlock_bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, in_channel, out_channel, downsample = False):
+    def __init__(self, in_channel, out_channel, stride = 1):
         super(ResBlock_bottleneck,self).__init__()
         self.expansion = 4
-        self.downsample = downsample
         self.bias = False
        
-        
-        if self.downsample:
-            self.downsample_shortcut = nn.Sequential(
-                nn.Conv2d(in_channel, out_channel*self.expansion, kernel_size=1, stride=2, bias=self.bias),
-                nn.BatchNorm2d(out_channel*self.expansion)
-            )
-            self.stride_conv3x3 = 2
-        else:
-            self.stride_conv3x3 = 1
+        self.downsample_shortcut =  nn.Sequential()
+        self.stride = stride
 
+        if (in_channel!=out_channel*self.expansion):
+            self.downsample_shortcut = nn.Sequential(
+                nn.Conv2d(in_channel, out_channel*self.expansion, kernel_size=1, stride=self.stride, bias=self.bias)
+            )
 
         self.convs = nn.Sequential(
             # conv 1x1
@@ -77,7 +64,7 @@ class ResBlock_bottleneck(nn.Module):
             # conv 3x3
             nn.BatchNorm2d(out_channel),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=self.stride_conv3x3, padding=1, bias=self.bias),
+            nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=self.stride, padding=1, bias=self.bias),
             # conv 1x1
             nn.BatchNorm2d(out_channel),
             nn.ReLU(inplace=True),
@@ -85,28 +72,22 @@ class ResBlock_bottleneck(nn.Module):
 
         )
 
-        self.relu = nn.ReLU(inplace=True)
-
     def forward(self, x):
         shortcut = x
 
         x = self.convs(x)
-
-        if self.downsample:
-            shortcut = self.downsample_shortcut(shortcut)
-
+        shortcut = self.downsample_shortcut(shortcut)
         x = x + shortcut
-        x = self.relu(x)
 
         return x
 
-def ResGroup(block, in_channel, out_channel, num_blocks=2):
+def ResGroup(block, in_channel, out_channel, num_blocks=2, stride=2):
 
     layers = []
-    layers.append(block(in_channel, out_channel, True))
+    layers.append(block(in_channel, out_channel, stride))
     in_channel_current = out_channel * block.expansion
     for i in range(1, num_blocks):
-        layers.append(block(in_channel_current, out_channel, False))
+        layers.append(block(in_channel_current, out_channel, 1))
 
     return nn.Sequential(*layers)
 
@@ -116,15 +97,13 @@ class ResNet_v2(nn.Module):
         super(ResNet_v2, self).__init__()
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, conv_channels[0], kernel_size=7, stride=2, padding=3, bias=False),
-            # nn.Conv2d(3, conv_channels[0], kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(conv_channels[0]),
-            nn.ReLU(inplace=True),
+            # nn.Conv2d(3, conv_channels[0], kernel_size=7, stride=2, padding=3, bias=False),
+            nn.Conv2d(3, conv_channels[0], kernel_size=3, stride=1, padding=1, bias=False),
         )
         # self.maxpool =  nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.maxpool = nn.Sequential()
 
-        self.group1 = ResGroup(block, conv_channels[0], conv_channels[0], num_blocks[0])
+        self.group1 = ResGroup(block, conv_channels[0], conv_channels[0], num_blocks[0], 1)
         self.group2 = ResGroup(block, conv_channels[0]*block.expansion, conv_channels[1], num_blocks[1])
         self.group3 = ResGroup(block, conv_channels[1]*block.expansion, conv_channels[2], num_blocks[2])
         self.group4 = ResGroup(block, conv_channels[2]*block.expansion, conv_channels[3], num_blocks[3])

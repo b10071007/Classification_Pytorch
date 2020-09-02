@@ -184,13 +184,13 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
 
 def main():
     
-    rootPath = "E:/Dataset/Classification/cifar10/"
+    rootPath = "D:/Dataset/Classification/cifar10/"
     imgPath = rootPath + "_Images/"
-    train_fListPath = rootPath + "train.txt"
-    val_fListPath = rootPath + "val.txt"
+    train_fListPath = rootPath + "train_all.txt"
+    val_fListPath = rootPath + "test.txt"
 
     model_name = "ResNet50_v2"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/ResNet50_v2/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
+    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/allTrain/ResNet50_v2_cifar/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -205,7 +205,7 @@ def main():
     gamma = 0.2
     lr_decay_steps = [60,120,160] #[80, 120] # [80]
     warm_epoch = 5
-    nesterov = False
+    nesterov = True
 
     #--------------------------------------------------------------------------------------------------------#
 

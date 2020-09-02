@@ -181,6 +181,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     with open(os.path.split(best_model_path)[0] + '/Best_model_{}_{}.txt'.format(best_ep, best_acc), 'w') as fObj:
         fObj.writelines("{}\t{}".format(best_ep, best_acc))
 
+#--------------------------------------------------------------------------------------------------------#
 
 def main():
     
@@ -189,8 +190,8 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "ResNet50_v2"
-    save_folder = "./weights/allTrain/ResNet50_v2_cifar/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
+    model_name = "ResNet50"
+    save_folder = "./weights/allTrain/ResNet50_cifar/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -265,10 +266,16 @@ def main():
     elif model_name=="VGG19":
         net = VGG.VGG19(setting.num_classes, init_weights=True)
 
+    elif model_name=="ResNet18":
+        net = ResNet.ResNet18(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet34":
+        net =  net = ResNet.ResNet34(setting.num_classes, init_weights=True)
     elif model_name=="ResNet50":
         net = ResNet.ResNet50(setting.num_classes, init_weights=True)
     elif model_name=="ResNet101":
-        net =  ResNet.ResNet101(setting.num_classes, init_weights=True)
+        net =  net = ResNet.ResNet101(setting.num_classes, init_weights=True)
+    elif model_name=="ResNet152":
+        net =  net = ResNet.ResNet152(setting.num_classes, init_weights=True)     
     elif model_name=="ResNet50_official":
         import torchvision.models as models
         net = models.resnet50()

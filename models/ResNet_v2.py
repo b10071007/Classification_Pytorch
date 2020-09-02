@@ -10,14 +10,14 @@ class ResBlock(nn.Module):
     expansion = 1
     def __init__(self, in_channel, out_channel, stride = 1):
         super(ResBlock,self).__init__()
-        self.expansion = 1
+        self.bias = False
        
         self.downsample_shortcut =  nn.Sequential()
         self.stride = stride
 
         if (in_channel!=out_channel*self.expansion):
             self.downsample_shortcut = nn.Sequential(
-                nn.Conv2d(in_channel, out_channel*self.expansion, kernel_size=1, stride=self.stride, bias=self.bias)
+                nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=self.stride, bias=self.bias)
             )
 
         self.convs = nn.Sequential(
@@ -108,6 +108,9 @@ class ResNet_v2(nn.Module):
         self.group3 = ResGroup(block, conv_channels[1]*block.expansion, conv_channels[2], num_blocks[2])
         self.group4 = ResGroup(block, conv_channels[2]*block.expansion, conv_channels[3], num_blocks[3])
         
+        self.bn = nn.BatchNorm2d(conv_channels[3])
+        self.relu = nn.ReLU(inplace=True)
+        
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(conv_channels[3]*block.expansion, num_classes)
 
@@ -122,6 +125,9 @@ class ResNet_v2(nn.Module):
         x = self.group2(x)
         x = self.group3(x)
         x = self.group4(x)
+
+        x = self.bn(x)
+        x = self.relu(x)
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)

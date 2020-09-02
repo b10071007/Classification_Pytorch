@@ -189,8 +189,8 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "ResNet34_v2"
-    save_folder = "E:/Coding/pytorch/project/Classification_Pytorch/weights/allTrain/ResNet34_v2_cifar/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
+    model_name = "ResNet50_v2"
+    save_folder = "./weights/allTrain/ResNet50_v2_cifar/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10

@@ -108,9 +108,9 @@ class ResNet_v2(nn.Module):
         self.group3 = ResGroup(block, conv_channels[1]*block.expansion, conv_channels[2], num_blocks[2])
         self.group4 = ResGroup(block, conv_channels[2]*block.expansion, conv_channels[3], num_blocks[3])
         
-        self.bn = nn.BatchNorm2d(conv_channels[3])
+        self.bn = nn.BatchNorm2d(conv_channels[3]*block.expansion)
         self.relu = nn.ReLU(inplace=True)
-        
+
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(conv_channels[3]*block.expansion, num_classes)
 

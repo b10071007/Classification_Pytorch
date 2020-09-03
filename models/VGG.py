@@ -72,11 +72,11 @@ class VGG(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
          
-def VGG16(num_classes=10, init_weights=True, fc_channels=[512, 4096, 4096]):
+def Build_VGG16(num_classes=10, init_weights=True, fc_channels=[512, 4096, 4096]):
     return VGG(create_feature([2, 2, 3, 3, 3], [64, 128, 256, 512, 512]),
                num_classes, init_weights, fc_channels)
 
-def VGG19(num_classes=10, init_weights=True, fc_channels=[512, 4096, 4096]):
+def Build_VGG19(num_classes=10, init_weights=True, fc_channels=[512, 4096, 4096]):
     return VGG(create_feature([2, 2, 4, 4, 4], [64, 128, 256, 512, 512]),
                num_classes, init_weights, fc_channels)
 

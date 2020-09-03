@@ -150,18 +150,18 @@ class ResNet_v2(nn.Module):
 
 #---------------------------------------------------------------------------------------------------------------#
 
-def ResNet18_v2(num_classes=10, init_weights=True):
+def Build_ResNet18_v2(num_classes=10, init_weights=True):
     return ResNet_v2(ResBlock, num_classes, num_blocks=[2, 2, 2, 2], init_weights=True)
 
-def ResNet34_v2(num_classes=10, init_weights=True):
+def Build_ResNet34_v2(num_classes=10, init_weights=True):
     return ResNet_v2(ResBlock, num_classes, num_blocks=[3, 4, 6, 3], init_weights=True)
 
-def ResNet50_v2(num_classes=10, init_weights=True):
+def Build_ResNet50_v2(num_classes=10, init_weights=True):
     return ResNet_v2(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 6, 3], init_weights=True)
 
-def ResNet101_v2(num_classes=10, init_weights=True):
+def Build_ResNet101_v2(num_classes=10, init_weights=True):
     return ResNet_v2(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 23, 3], init_weights=True)
 
-def ResNet152_v2(num_classes=10, init_weights=True):
+def Build_ResNet152_v2(num_classes=10, init_weights=True):
     return ResNet_v2(ResBlock_bottleneck, num_classes, num_blocks=[3, 8, 36, 3], init_weights=True)
 

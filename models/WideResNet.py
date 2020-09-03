@@ -116,14 +116,14 @@ class WideResNet(nn.Module):
 #---------------------------------------------------------------------------------------------------------------#
 
 # WRN-28-4
-def WRN_N4_k4(num_classes=10, init_weights=True):
+def Build_WRN_N4_k4(num_classes=10, init_weights=True):
     return WideResNet(num_classes, N=4, k=4, init_weights=True)
 # WRN-28-10
-def WRN_N4_k10(num_classes=10, init_weights=True):
+def Build_WRN_N4_k10(num_classes=10, init_weights=True):
     return WideResNet(num_classes, N=4, k=10, init_weights=True)
 # WRN-28-12
-def WRN_N4_k12(num_classes=10, init_weights=True):
+def Build_WRN_N4_k12(num_classes=10, init_weights=True):
     return WideResNet(num_classes, N=4, k=12, init_weights=True)
 # WRN-40-12
-def WRN_N6_k10(num_classes=10, init_weights=True):
+def Build_WRN_N6_k10(num_classes=10, init_weights=True):
     return WideResNet(num_classes, N=6, k=10, init_weights=True)

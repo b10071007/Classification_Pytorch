@@ -13,7 +13,8 @@ import torchvision.transforms as transforms
 import sys
 sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-from models import VGG, ResNet, WideResNet, ResNet_v2
+# from models import VGG, ResNet, WideResNet, ResNet_v2
+import models
 
 #--------------------------------------------------------------------------------------------------------#
 
@@ -190,8 +191,8 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "WRN_N4_k4"
-    save_folder = "./weights/allTrain/WRN_N4_k4_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
+    model_name = "WRN_N6_k10"
+    save_folder = "./weights/allTrain/WRN_N6_k10_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -204,7 +205,7 @@ def main():
 
     base_lr = 0.1 # 0.01
     gamma = 0.2
-    lr_decay_steps = [60,120,160] #[80, 120] # [80]
+    lr_decay_steps = [60, 120, 160] #[80, 120] # [80]
     warm_epoch = 5
     nesterov = True
 
@@ -259,48 +260,24 @@ def main():
     epoch_iters = num_train // batch_size_train
     
     # Setup model
+    model_names = sorted( name[6:] for name in models.__dict__
+                          if name.startswith("Build_")
+                          and callable(models.__dict__[name]) )
+    
+    # print("Support models:")
+    # for m in model_names: 
+    #     print(' - ' + m)
+        
     outputManage.output("Create Model: {}".format(model_name))
 
-    if model_name=="VGG16":
-        net = VGG.VGG16(num_classes, init_weights=True)
-    elif model_name=="VGG19":
-        net = VGG.VGG19(setting.num_classes, init_weights=True)
-
-    elif model_name=="ResNet18":
-        net = ResNet.ResNet18(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet34":
-        net =  net = ResNet.ResNet34(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet50":
-        net = ResNet.ResNet50(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet101":
-        net =  net = ResNet.ResNet101(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet152":
-        net =  net = ResNet.ResNet152(setting.num_classes, init_weights=True)     
-    elif model_name=="ResNet50_official":
-        import torchvision.models as models
-        net = models.resnet50()
-
-    elif model_name=="ResNet18_v2":
-        net = ResNet_v2.ResNet18_v2(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet34_v2":
-        net =  net = ResNet_v2.ResNet34_v2(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet50_v2":
-        net = ResNet_v2.ResNet50_v2(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet101_v2":
-        net =  net = ResNet_v2.ResNet101_v2(setting.num_classes, init_weights=True)
-    elif model_name=="ResNet152_v2":
-        net =  net = ResNet_v2.ResNet152_v2(setting.num_classes, init_weights=True)     
-
-    elif model_name=="WRN_N4_k4":
-        net = WideResNet.WRN_N4_k4(setting.num_classes, init_weights=True)
-    elif model_name=="WRN_N4_k10":
-        net = WideResNet.WRN_N4_k10(setting.num_classes, init_weights=True)
-    elif model_name=="WRN_N6_k10":
-        net = WideResNet.WRN_N4_k4(setting.num_classes, init_weights=True)
-
-    else:
-        raise ValueError("Not support \"{}\"".format(model_name))
-
+    net = None
+    for model_names_each in model_names:
+        if model_name == model_names_each:
+            net = models.__dict__["Build_" + model_names_each](
+                        num_classes = setting.num_classes,
+                        init_weights = True)
+    if net is None:
+        raise ValueError("Not support model -> \"{}\"".format(model_name))
 
     # Setup GPU
     if torch.cuda.is_available():

@@ -149,17 +149,17 @@ class ResNet(nn.Module):
 
 #---------------------------------------------------------------------------------------------------------------#
 
-def ResNet18(num_classes=10, init_weights=True):
+def Build_ResNet18(num_classes=10, init_weights=True):
     return ResNet(ResBlock, num_classes, num_blocks=[2, 2, 2, 2], init_weights=True)
 
-def ResNet34(num_classes=10, init_weights=True):
+def Build_ResNet34(num_classes=10, init_weights=True):
     return ResNet(ResBlock, num_classes, num_blocks=[3, 4, 6, 3], init_weights=True)
 
-def ResNet50(num_classes=10, init_weights=True):
+def Build_ResNet50(num_classes=10, init_weights=True):
     return ResNet(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 6, 3], init_weights=True)
 
-def ResNet101(num_classes=10, init_weights=True):
+def Build_ResNet101(num_classes=10, init_weights=True):
     return ResNet(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 23, 3], init_weights=True)
 
-def ResNet152(num_classes=10, init_weights=True):
+def Build_ResNet152(num_classes=10, init_weights=True):
     return ResNet(ResBlock_bottleneck, num_classes, num_blocks=[3, 8, 36, 3], init_weights=True)

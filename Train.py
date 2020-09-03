@@ -190,8 +190,8 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "ResNet50"
-    save_folder = "./weights/allTrain/ResNet50_cifar/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
+    model_name = "WRN_N4_k4"
+    save_folder = "./weights/allTrain/WRN_N4_k4_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -295,6 +295,9 @@ def main():
         net = WideResNet.WRN_N4_k4(setting.num_classes, init_weights=True)
     elif model_name=="WRN_N4_k10":
         net = WideResNet.WRN_N4_k10(setting.num_classes, init_weights=True)
+    elif model_name=="WRN_N6_k10":
+        net = WideResNet.WRN_N4_k4(setting.num_classes, init_weights=True)
+
     else:
         raise ValueError("Not support \"{}\"".format(model_name))
 

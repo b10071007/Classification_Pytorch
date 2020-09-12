@@ -6,45 +6,44 @@ class WideResBlock(nn.Module):
     def __init__(self, in_channel, out_channel, stride = 1, dropout=0):
         super(WideResBlock,self).__init__()
         self.bias = False
-       
-        self.downsample_shortcut =  nn.Sequential()
         self.stride = stride
+        self.same_Channel=(in_channel==out_channel)
 
-        if (in_channel!=out_channel):
+        self.downsample_shortcut =  nn.Sequential()
+        
+        self.preAct1 = nn.Sequential(
+            nn.BatchNorm2d(in_channel), 
+            nn.ReLU(inplace=True),
+            )
+        self.conv1 = nn.Conv2d(in_channel, out_channel, kernel_size=3, stride=self.stride, padding=1, bias=self.bias)
+        
+        self.preAct2 = nn.Sequential(
+            nn.BatchNorm2d(out_channel), 
+            nn.ReLU(inplace=True),
+            )
+        self.conv2 = nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=1, padding=1, bias=self.bias)
+
+        if not self.same_Channel:
             self.downsample_shortcut = nn.Sequential(
                 nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=self.stride, bias=self.bias)
-            )
-
-        if dropout>0:
-            self.convs = nn.Sequential(
-                # conv 3x3
-                nn.BatchNorm2d(in_channel),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(in_channel, out_channel, kernel_size=3, stride=self.stride, padding=1, bias=self.bias),
-                # conv 3x3
-                nn.BatchNorm2d(out_channel),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=1, padding=1, bias=self.bias),
-            )
-        else:
-            self.convs = nn.Sequential(
-                # conv 3x3
-                nn.BatchNorm2d(in_channel),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(in_channel, out_channel, kernel_size=3, stride=self.stride, padding=1, bias=self.bias),
-                # conv 3x3
-                nn.BatchNorm2d(out_channel),
-                nn.ReLU(inplace=True),
-                F.dropout(p=self.dropout, training=self.training),
-                nn.Conv2d(out_channel, out_channel, kernel_size=3, stride=1, padding=1, bias=self.bias),
             )
 
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        shortcut = x
 
-        x = self.convs(x)
+        if self.same_Channel:
+            shortcut = x
+            x = self.preAct1(x)
+        else:
+            x = self.preAct1(x)
+            shortcut = x
+            
+        x = self.conv1(x)
+    
+        x = self.preAct2(x)
+        x = self.conv2(x)
+
         shortcut = self.downsample_shortcut(shortcut)
         x = x + shortcut
 

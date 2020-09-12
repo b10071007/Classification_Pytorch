@@ -91,7 +91,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     batch_time = []
     log_str = "Epoch: [{:3d}/{:3d}] Iterations: [{:3d}/{:3d}] Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
-    outputManage.output('{}: Start Training '.format(utils.GetCurrentTime()))
+    outputManage.output('\n{}: Start Training '.format(utils.GetCurrentTime()))
     best_ep = 0
     best_acc = 0
     best_model_message = "Best model until now:\n - epoch={}\n - Accuracy={}"
@@ -173,15 +173,15 @@ def main():
     val_fListPath = rootPath + "test.txt"
 
     model_name = "WRN_N4_k4"
-    save_folder = "./weights/allTrain/WRN_N4_k4_drop0.5/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
+    save_folder = "./weights/allTrain/WRN_N4_k4_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
     batch_size_train = 128
     batch_size_val = 100
-    max_epoch = 100
+    max_epoch = 200
     display_interval = 100
-    val_interval = 5
+    val_interval = 10
 
 
     base_lr = 0.1 # 0.01

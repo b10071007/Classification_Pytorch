@@ -2,7 +2,6 @@
 import os
 import numpy as np
 import time
-from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -13,7 +12,7 @@ import torchvision.transforms as transforms
 import sys
 sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-# from models import VGG, ResNet, WideResNet, ResNet_v2
+import utils 
 import models
 
 #--------------------------------------------------------------------------------------------------------#
@@ -34,26 +33,8 @@ class Setting():
         self.warm_epoch = warm_epoch
         self.nesterov = nesterov
 
-# setup output manager
-class OutputManager():
-    def __init__(self, log_file_path):
-        self.log_file_path = log_file_path
-        filePath = os.path.split(log_file_path)[0]
-        if not os.path.exists(filePath): os.makedirs(filePath)
-        self.log_file = open(log_file_path, 'w')
-
-    def output(self, content):
-        print(content)
-        self.log_file.write(content + '\n')
-
-    def close(self):
-        self.log_file.close()
-
 #--------------------------------------------------------------------------------------------------------#
         
-def GetCurrentTime():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
 def adjust_learning_rate(optimizer, base_lr, gamma, step_index, 
                          epoch, warm_epoch, iteration, epoch_iters):
     if epoch < warm_epoch: # warm up
@@ -110,7 +91,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     batch_time = []
     log_str = "Epoch: [{:3d}/{:3d}] Iterations: [{:3d}/{:3d}] Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
-    outputManage.output('{}: Start Training '.format(GetCurrentTime()))
+    outputManage.output('{}: Start Training '.format(utils.GetCurrentTime()))
     best_ep = 0
     best_acc = 0
     best_model_message = "Best model until now:\n - epoch={}\n - Accuracy={}"
@@ -177,7 +158,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
             outputManage.output(best_model_message.format(best_ep, best_acc) + '\n')
 
 
-    outputManage.output('{}: Training Finished  '.format(GetCurrentTime()))
+    outputManage.output('{}: Training Finished  '.format(utils.GetCurrentTime()))
     best_acc = round(best_acc, 4)
     with open(os.path.split(best_model_path)[0] + '/Best_model_{}_{}.txt'.format(best_ep, best_acc), 'w') as fObj:
         fObj.writelines("{}\t{}".format(best_ep, best_acc))
@@ -191,16 +172,16 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "WRN_N6_k10"
-    save_folder = "./weights/allTrain/WRN_N6_k10_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
+    model_name = "WRN_N4_k4"
+    save_folder = "./weights/allTrain/WRN_N4_k4_drop0.5/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
     batch_size_train = 128
     batch_size_val = 100
-    max_epoch = 200
+    max_epoch = 100
     display_interval = 100
-    val_interval = 10
+    val_interval = 5
 
 
     base_lr = 0.1 # 0.01
@@ -214,11 +195,11 @@ def main():
     setting = Setting(num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval, 
                       base_lr, gamma, lr_decay_steps, warm_epoch, nesterov)
 
-    # Setup output information 
+    ''' Setup output information '''
     os.makedirs(save_folder, exist_ok=True)
     log_file_path = os.path.join(save_folder, model_name + time.strftime('_%Y-%m-%d-%H-%M', time.localtime(time.time())) + '.log')
     
-    outputManage = OutputManager(log_file_path)
+    outputManage = utils.OutputManager(log_file_path)
 
     outputManage.output("\nHyper-parameter setting:")
     lr_decay_steps_str = "["
@@ -228,7 +209,7 @@ def main():
     outputManage.output(" - lr = {}\n - gamma = {}\n - lr_decay_steps = {}\n - batch_size = {}\n - max_epoch = {}\n".format(
         base_lr, gamma, lr_decay_steps_str, batch_size_train, max_epoch))
 
-    # Loading and normalizing Custom cifar10 dataset
+    ''' Loading and normalizing Custom cifar10 dataset '''
     outputManage.output("Setup dataset ...")
     transform = transforms.Compose(
         [
@@ -258,8 +239,8 @@ def main():
 
     num_train = len(train_Dataset)
     epoch_iters = num_train // batch_size_train
-    
-    # Setup model
+
+    ''' Setup model '''
     model_names = sorted( name[6:] for name in models.__dict__
                           if name.startswith("Build_")
                           and callable(models.__dict__[name]) )
@@ -279,7 +260,7 @@ def main():
     if net is None:
         raise ValueError("Not support model -> \"{}\"".format(model_name))
 
-    # Setup GPU
+    ''' Setup GPU '''
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
         outputManage.output(" - GPU is available -> use GPU")

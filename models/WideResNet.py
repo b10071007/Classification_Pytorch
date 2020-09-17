@@ -28,8 +28,6 @@ class WideResBlock(nn.Module):
                 nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=self.stride, bias=self.bias)
             )
 
-        self.relu = nn.ReLU(inplace=True)
-
     def forward(self, x):
 
         if self.same_Channel:
@@ -38,7 +36,7 @@ class WideResBlock(nn.Module):
         else:
             x = self.preAct1(x)
             shortcut = x
-            
+
         x = self.conv1(x)
     
         x = self.preAct2(x)
@@ -66,8 +64,6 @@ class WideResNet(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, base_channel, kernel_size=3, stride=1, padding=1, bias=False),
         )
-        # self.maxpool =  nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.maxpool = nn.Sequential()
 
         self.group1 = WideResGroup(in_channel=base_channel, out_channel=base_channel*k, N=N, stride=1, dropout=dropout)
         self.group2 = WideResGroup(in_channel=base_channel*k, out_channel=base_channel*2*k, N=N, stride=2, dropout=dropout)
@@ -84,7 +80,6 @@ class WideResNet(nn.Module):
         
     def forward(self, x):
         x = self.conv1(x)
-        x = self.maxpool(x)
 
         x = self.group1(x)
         x = self.group2(x)

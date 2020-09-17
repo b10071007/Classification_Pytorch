@@ -20,7 +20,7 @@ import models
 # Setup settings and hyper-parameter
 class Setting():
     def __init__(self, num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval,
-                 base_lr, gamma, lr_decay_steps, warm_epoch, nesterov):
+                 base_lr, gamma, lr_decay_steps, warm_epoch, weight_decay, nesterov):
         self.num_classes = num_classes
         self.batch_size_train = batch_size_train
         self.batch_size_val = batch_size_val
@@ -31,6 +31,7 @@ class Setting():
         self.gamma = gamma
         self.lr_decay_steps = lr_decay_steps
         self.warm_epoch = warm_epoch
+        self.weight_decay = weight_decay
         self.nesterov = nesterov
 
 #--------------------------------------------------------------------------------------------------------#
@@ -100,7 +101,7 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     step_index = 0
     lr = setting.base_lr
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, nesterov=setting.nesterov, weight_decay=0.0005)
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, nesterov=setting.nesterov, weight_decay=setting.weight_decay)
 
     for epoch in range(setting.max_epoch):  # loop over the dataset multiple times
         
@@ -172,8 +173,10 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "WRN_N4_k4"
-    save_folder = "./weights/allTrain/WRN_N4_k4_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005_nesterov/"
+    # model_name = "wrn_28_10"
+    # save_folder = "./weights/allTrain/wrn_28_10_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
+    model_name = "WRN_N4_k10"
+    save_folder = "./weights/allTrain/WRN_N4_k10_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
@@ -188,12 +191,13 @@ def main():
     gamma = 0.2
     lr_decay_steps = [60, 120, 160] #[80, 120] # [80]
     warm_epoch = 5
-    nesterov = True
+    weight_decay = 0.0005
+    nesterov = False
 
     #--------------------------------------------------------------------------------------------------------#
 
     setting = Setting(num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval, 
-                      base_lr, gamma, lr_decay_steps, warm_epoch, nesterov)
+                      base_lr, gamma, lr_decay_steps, warm_epoch, weight_decay, nesterov)
 
     ''' Setup output information '''
     os.makedirs(save_folder, exist_ok=True)
@@ -213,11 +217,11 @@ def main():
     outputManage.output("Setup dataset ...")
     transform = transforms.Compose(
         [
-         transforms.Resize(size=(60,60)),
-         transforms.RandomCrop(size=(48,48)),
-        #  transforms.RandomCrop(size=(32,32), padding=4),
+        #  transforms.Resize(size=(60,60)),
+        #  transforms.RandomCrop(size=(48,48)),
+         transforms.RandomCrop(size=(32,32), padding=4),
          transforms.RandomHorizontalFlip(),
-         transforms.RandomVerticalFlip(),
+        #  transforms.RandomVerticalFlip(),
          transforms.ToTensor(),
         #  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
          transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -225,8 +229,8 @@ def main():
 
     transform_val = transforms.Compose(
         [
-         transforms.Resize(size=(60,60)),
-         transforms.CenterCrop(size=(54,54)),
+        #  transforms.Resize(size=(60,60)),
+        #  transforms.CenterCrop(size=(54,54)),
          transforms.ToTensor(),
         #  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
          transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -254,9 +258,8 @@ def main():
     net = None
     for model_names_each in model_names:
         if model_name == model_names_each:
-            net = models.__dict__["Build_" + model_names_each](
-                        num_classes = setting.num_classes,
-                        init_weights = True)
+            net = models.__dict__["Build_" + model_names_each](num_classes = setting.num_classes, init_weights = True)
+            break
     if net is None:
         raise ValueError("Not support model -> \"{}\"".format(model_name))
 

@@ -7,6 +7,7 @@ class WideResBlock(nn.Module):
         super(WideResBlock,self).__init__()
         self.bias = False
         self.stride = stride
+        self.dropout = dropout
         self.same_Channel=(in_channel==out_channel)
 
         self.downsample_shortcut =  nn.Sequential()
@@ -40,6 +41,10 @@ class WideResBlock(nn.Module):
         x = self.conv1(x)
     
         x = self.preAct2(x)
+
+        if self.dropout > 0:
+            x = F.dropout(x, p=self.dropout, training=self.training)
+
         x = self.conv2(x)
 
         shortcut = self.downsample_shortcut(shortcut)

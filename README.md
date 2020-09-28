@@ -6,6 +6,7 @@ Classification on cifar-10 or any other dataset with Pytorch
 - ResNet_v1
 - ResNet_v2
 - WideResNet
+- DenseNet
 
 ### Supported Training details
 - Step Learning Rate Decay

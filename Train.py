@@ -175,8 +175,8 @@ def main():
 
     # model_name = "wrn_28_10"
     # save_folder = "./weights/allTrain/wrn_28_10_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
-    model_name = "WRN_N4_k10"
-    save_folder = "./weights/allTrain/WRN_N4_k10_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
+    model_name = "DenseNet100_k12"
+    save_folder = "./weights/allTrain/DenseNet100_k12/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10

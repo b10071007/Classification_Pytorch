@@ -68,7 +68,6 @@ class DenseNet(nn.Module):
         self.dense2 = self.makeDenseBlock(expansion=expansion, N=num_blocks[1], dropout=dropout)
         self.transition2 = self.makeTransition(compression=compression)
         self.dense3 = self.makeDenseBlock(expansion=expansion, N=num_blocks[2], dropout=dropout)
-        self.transition3 = self.makeTransition(compression=compression)
 
         self.bn_last = nn.BatchNorm2d(self.in_channel)
         self.relu_last = nn.ReLU(inplace=True)
@@ -87,7 +86,6 @@ class DenseNet(nn.Module):
         x = self.dense2(x)
         x = self.transition2(x)
         x = self.dense3(x)
-        x = self.transition3(x)
 
         x = self.relu_last(self.bn_last(x))
         x = self.avgpool(x)

@@ -180,11 +180,13 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "DenseNet100_k12"
-    save_folder = "./weights/allTrain/DenseNet100_k12/bs64_ep300_warm1_lr0.1_gamma0.1_wdecay0.0001/"
+    model_name = "ResNeXt29_8x64d"
+    # save_folder = "./weights/allTrain/DenseNet100_k12/bs64_ep300_warm1_lr0.1_gamma0.1_wdecay0.0001/"
+    save_folder = "./weights/test/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
-    gpu_id = [0]
+    gpu_id = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
 
     num_classes = 10
     batch_size_train = 64 # 128
@@ -198,7 +200,7 @@ def main():
     gamma = 0.1 # 0.2
     lr_decay_steps = [150, 225] # [60, 120, 160] 
     warm_epoch = 1 # 5
-    weight_decay = 0.0001 # 0.0005
+    weight_decay = 0.0005 # 0.0005
     nesterov = True
 
     #--------------------------------------------------------------------------------------------------------#
@@ -272,16 +274,16 @@ def main():
 
     ''' Setup GPU '''
     if torch.cuda.is_available():
-        # device = torch.device("cuda:0")
         device = torch.device("cuda")
         outputManage.output(" - GPU is available -> use GPU")
+        net.to(device)
+        outputManage.output(" - Used GPU: " + gpu_id)
+        net = nn.DataParallel(net) # multi-GPU
     else:
         device = torch.device("cpu")
         outputManage.output(" - GPU is not available -> use GPU")
+        net.to(device)
 
-    net.to(device)
-    net = nn.DataParallel(net,device_ids=gpu_id) # multi-GPU
-    
     train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputManage, best_model_path)
 
 #--------------------------------------------------------------------------------------------------------#  

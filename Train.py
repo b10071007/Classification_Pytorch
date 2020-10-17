@@ -184,6 +184,8 @@ def main():
     save_folder = "./weights/allTrain/DenseNet100_k12/bs64_ep300_warm1_lr0.1_gamma0.1_wdecay0.0001/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
+    gpu_id = [0]
+
     num_classes = 10
     batch_size_train = 64 # 128
     batch_size_val = 100
@@ -270,13 +272,15 @@ def main():
 
     ''' Setup GPU '''
     if torch.cuda.is_available():
-        device = torch.device("cuda:0")
+        # device = torch.device("cuda:0")
+        device = torch.device("cuda")
         outputManage.output(" - GPU is available -> use GPU")
     else:
         device = torch.device("cpu")
         outputManage.output(" - GPU is not available -> use GPU")
 
     net.to(device)
+    net = nn.DataParallel(net,device_ids=gpu_id) # multi-GPU
     
     train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputManage, best_model_path)
 

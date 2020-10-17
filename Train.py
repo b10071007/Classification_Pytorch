@@ -93,6 +93,8 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
     log_str = "Epoch: [{:3d}/{:3d}] Iterations: [{:3d}/{:3d}] Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
     outputManage.output('\n{}: Start Training '.format(utils.GetCurrentTime()))
+    start_training = time.time()
+
     best_ep = 0
     best_acc = 0
     best_model_message = "Best model until now:\n - epoch={}\n - Accuracy={}"
@@ -159,7 +161,12 @@ def train(net, train_Loader, val_Loader, device, setting, epoch_iters, outputMan
             outputManage.output(best_model_message.format(best_ep, best_acc) + '\n')
 
 
+    end_training = time.time()
+    trainingTime = round((end_training - start_training)/60)
     outputManage.output('{}: Training Finished  '.format(utils.GetCurrentTime()))
+    outputManage.output('Training time: {} mins'.format(trainingTime))
+    
+
     best_acc = round(best_acc, 4)
     with open(os.path.split(best_model_path)[0] + '/Best_model_{}_{}.txt'.format(best_ep, best_acc), 'w') as fObj:
         fObj.writelines("{}\t{}".format(best_ep, best_acc))
@@ -173,26 +180,24 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    # model_name = "wrn_28_10"
-    # save_folder = "./weights/allTrain/wrn_28_10_drop0.3/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
     model_name = "DenseNet100_k12"
-    save_folder = "./weights/allTrain/DenseNet100_k12/bs128_ep200_warm5_lr0.1_gamma0.2_wdecay0.0005/"
+    save_folder = "./weights/allTrain/DenseNet100_k12/bs64_ep300_warm1_lr0.1_gamma0.1_wdecay0.0001/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     num_classes = 10
-    batch_size_train = 128
+    batch_size_train = 64 # 128
     batch_size_val = 100
-    max_epoch = 200
-    display_interval = 100
+    max_epoch = 300 # 200
+    display_interval = 200
     val_interval = 10
 
 
     base_lr = 0.1 # 0.01
-    gamma = 0.2
-    lr_decay_steps = [60, 120, 160] #[80, 120] # [80]
-    warm_epoch = 5
-    weight_decay = 0.0005
-    nesterov = False
+    gamma = 0.1 # 0.2
+    lr_decay_steps = [150, 225] # [60, 120, 160] 
+    warm_epoch = 1 # 5
+    weight_decay = 0.0001 # 0.0005
+    nesterov = True
 
     #--------------------------------------------------------------------------------------------------------#
 

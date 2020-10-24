@@ -81,8 +81,8 @@ class ResNeXt(nn.Module):
             self.group4 = ResGroup(block, conv_channels[2]*block.expansion, conv_channels[3], num_blocks[3])
 
         self.group1 = ResGroup(block, conv_channels[0], conv_channels[0], num_blocks[0], 1, cardinality)
-        self.group2 = ResGroup(block, conv_channels[0]*block.expansion, conv_channels[1], num_blocks[1], cardinality)
-        self.group3 = ResGroup(block, conv_channels[1]*block.expansion, conv_channels[2], num_blocks[2], cardinality)
+        self.group2 = ResGroup(block, conv_channels[0]*block.expansion, conv_channels[1], num_blocks[1], 2, cardinality)
+        self.group3 = ResGroup(block, conv_channels[1]*block.expansion, conv_channels[2], num_blocks[2], 2, cardinality)
         
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(conv_channels[-1]*block.expansion, num_classes)

@@ -180,9 +180,9 @@ def main():
     train_fListPath = rootPath + "train_all.txt"
     val_fListPath = rootPath + "test.txt"
 
-    model_name = "ResNeXt29_8x64d"
-    # save_folder = "./weights/allTrain/DenseNet100_k12/bs64_ep300_warm1_lr0.1_gamma0.1_wdecay0.0001/"
-    save_folder = "./weights/test/"
+    model_name = "densenet_other_100_k12"
+    save_folder = "./weights/{}/bs64_ep300_warm1_lr0.1_gamma0.1_wdecay0.0001/".format(model_name)
+    # save_folder = "./weights/test/"
     best_model_path = os.path.join(save_folder, model_name + "_Best.pth")
 
     gpu_id = "0"

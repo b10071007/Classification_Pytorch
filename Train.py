@@ -298,6 +298,7 @@ def main():
         raise ValueError("Not support model -> \"{}\"".format(args.model_name))
 
     ''' Setup GPU '''
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
     if torch.cuda.is_available():
         device = torch.device("cuda")
         outputManage.output(" - GPU is available -> use GPU")

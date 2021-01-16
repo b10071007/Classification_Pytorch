@@ -37,6 +37,42 @@ import models
 
 #--------------------------------------------------------------------------------------------------------#
         
+def ParseTrainArgs():
+
+    parser = argparse.ArgumentParser(description='Classification Training')
+
+    # Dataset setting
+    parser.add_argument('-img_dir', help='the directory for images' )
+    parser.add_argument('-fList_train', help='the mappling list for training set' )
+    parser.add_argument('-fList_val', help='the mappling list for validation set' )
+    parser.add_argument('-num_classes', type=int, default=10, help='the number of classes' )
+    parser.add_argument('-out_dir', default='./weights/', help='the output directory (training logs and trained model)')
+
+    parser.add_argument('-channel_mean', type=float, nargs='+', default=(0.4914, 0.4822, 0.4465), 
+                        help='the channel mean of images for training set')
+    parser.add_argument('-channel_std', type=float, nargs='+', default=(0.2023, 0.1994, 0.2010), 
+                        help='the channel standard deviation of images for training set')
+
+    # Training setting
+    parser.add_argument('-gpu_id', default='0', help='setup visible gpus, for example 0,1')
+    parser.add_argument('-model_name', help='the classification model')
+    parser.add_argument('-batch_size_train', type=int, default=64, help='the batch size for training')
+    parser.add_argument('-batch_size_val', type=int, default=100, help='the batch size for validation')
+    parser.add_argument('-epochs', type=int, default=300, help='the total training epochs')
+    parser.add_argument('-val_epochs', type=int, default=10, help='the frequency to validate model')
+    parser.add_argument('-display_interval', type=int, default=100,  help='the total training epochs')
+
+    # Optimization setting
+    parser.add_argument('-base_lr', type=float, default=0.1, help='the learning rate')
+    parser.add_argument('-gamma', type=float, default=0.1, help='the coefficient for learning rate step decay')
+    parser.add_argument('-lr_decay_steps', type=int, nargs='+', default=[150, 225], help='the steps for step decay')
+    parser.add_argument('-weight_decay', type=float, default=0.0005, help='the weight decay coefficient')
+    parser.add_argument('-nesterov', action='store_true', default=False, help='use nesterov momentum')
+    parser.add_argument('-warm_epoch', type=int, default=1, help='the epochs to warm up')
+
+    args = parser.parse_args()
+    return args
+
 def adjust_learning_rate(optimizer, base_lr, gamma, step_index, 
                          epoch, warm_epoch, iteration, epoch_iters):
     if epoch < warm_epoch: # warm up
@@ -171,69 +207,7 @@ def train(net, train_Loader, val_Loader, device, args, epoch_iters, outputManage
 
 def main():
     
-    parser = argparse.ArgumentParser(description='Classification Training')
-
-    # Dataset setting
-    parser.add_argument('-img_dir', help='the directory for images' )
-    parser.add_argument('-fList_train', help='the mappling list for training set' )
-    parser.add_argument('-fList_val', help='the mappling list for validation set' )
-    parser.add_argument('-num_classes', type=int, default=10, help='the number of classes' )
-    parser.add_argument('-out_dir', default='./weights/', help='the output directory (training logs and trained model)')
-
-    parser.add_argument('-channel_mean', type=float, nargs='+', default=(0.4914, 0.4822, 0.4465), 
-                        help='the channel mean of images for training set')
-    parser.add_argument('-channel_std', type=float, nargs='+', default=(0.2023, 0.1994, 0.2010), 
-                        help='the channel standard deviation of images for training set')
-
-    # Training setting
-    parser.add_argument('-gpu_id', default='0', help='setup visible gpus, for example 0,1')
-    parser.add_argument('-model_name', help='the classification model')
-    parser.add_argument('-batch_size_train', type=int, default=64, help='the batch size for training')
-    parser.add_argument('-batch_size_val', type=int, default=100, help='the batch size for validation')
-    parser.add_argument('-epochs', type=int, default=300, help='the total training epochs')
-    parser.add_argument('-val_epochs', type=int, default=10, help='the frequency to validate model')
-    parser.add_argument('-display_interval', type=int, default=100,  help='the total training epochs')
-
-    # Optimization setting
-    parser.add_argument('-base_lr', type=float, default=0.1, help='the learning rate')
-    parser.add_argument('-gamma', type=float, default=0.1, help='the coefficient for learning rate step decay')
-    parser.add_argument('-lr_decay_steps', type=int, nargs='+', default=[150, 225], help='the steps for step decay')
-    parser.add_argument('-weight_decay', type=float, default=0.0005, help='the weight decay coefficient')
-    parser.add_argument('-nesterov', action='store_true', default=False, help='use nesterov momentum')
-    parser.add_argument('-warm_epoch', type=int, default=1, help='the epochs to warm up')
-
-    args = parser.parse_args()
-
-    # rootPath = "D:/Dataset/Classification/cifar10/"
-    # imgPath = rootPath + "_Images/"
-    # train_fListPath = rootPath + "train_all.txt"
-    # val_fListPath = rootPath + "test.txt"
-
-    # model_name = "ResNeXt29_8x64d"
-    # save_folder = "./weights/{}/bs64_ep350_warm1_lr0.1_gamma0.1_wdecay0.0005_train_val/".format(model_name)
-    # # save_folder = "./weights/test/"
-
-    # gpu_id = "0"
-    # os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
-
-    # num_classes = 10
-    # batch_size_train = 64 # 128
-    # batch_size_val = 100
-    # max_epoch = 350 # 200
-    # display_interval = 200
-    # val_interval = 10
-
-    # base_lr = 0.1 # 0.01
-    # gamma = 0.1 # 0.2
-    # lr_decay_steps = [150, 225, 300] # [60, 120, 160] 
-    # warm_epoch = 1 # 5
-    # weight_decay = 0.0005 # 0.0005
-    # nesterov = True
-
-    #--------------------------------------------------------------------------------------------------------#
-
-    # setting = Setting(num_classes, batch_size_train, batch_size_val, max_epoch, display_interval, val_interval, 
-    #                   base_lr, gamma, lr_decay_steps, warm_epoch, weight_decay, nesterov)
+    args = ParseTrainArgs()
 
     ''' Setup output information '''
     os.makedirs(args.out_dir, exist_ok=True)

@@ -1,17 +1,16 @@
 currentPath=$PWD
-rootPath=D:/Dataset/Classification/cifar10
+imgPath=D:/Dataset/Classification/cifar10
+programDir=E:/Coding/Pytorch/project/Classification_Pytorch
 model_name=DenseNet100_k12
 
 # #-----------------------------------------------------------------------------------#
 
-cd E:/Coding/Pytorch/project/Classification_Pytorch
-
-python Train.py \
-    -img_dir ${rootPath}/_Images/ \
-    -fList_train ${rootPath}/train_all.txt \
-    -fList_val ${rootPath}/test.txt \
+python ${programDir}/Train.py \
+    -img_dir ${imgPath}/_Images/ \
+    -fList_train ${imgPath}/train_all.txt \
+    -fList_val ${imgPath}/test.txt \
     -num_classes 10 \
-    -out_dir ./weights/${model_name}/test/ \
+    -out_dir ./../model/${model_name}/ \
     \
     -gpu_id 0 \
     -model_name ${model_name} \

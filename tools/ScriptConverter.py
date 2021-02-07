@@ -58,15 +58,15 @@ def main():
     srcPathList = [
                     "script/train.bat",
                     "script/test.bat",
-                    "script/train.sh",
-                    "script/test.sh",
+                    # "script/train.sh",
+                    # "script/test.sh",
                     
                   ]
     outPathList = [
                     "script/train.sh",
                     "script/test.sh",
-                    "script/train_debug.bat",
-                    "script/test_debug.bat",
+                    # "script/train_debug.bat",
+                    # "script/test_debug.bat",
                   ]
     
     

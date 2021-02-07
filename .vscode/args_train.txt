@@ -3,7 +3,7 @@
 				"-fList_train", "D:/Dataset/Classification/cifar10/train_all.txt",
 				"-fList_val", "D:/Dataset/Classification/cifar10/test.txt",
 				"-num_classes", "10",
-				"-out_dir", "./weights/DenseNet100_k12/test/",
+				"-out_dir", "./../model/DenseNet100_k12/",
 				"-gpu_id", "0",
 				"-model_name", "DenseNet100_k12",
 				"-batch_size_train", "64",

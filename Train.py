@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 import sys
 sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-import utils 
+from utils import OutputManager, GetCurrentTime, prepareAugmentation
 import models
 
 #--------------------------------------------------------------------------------------------------------#
@@ -48,11 +48,6 @@ def ParseTrainArgs():
     parser.add_argument('-num_classes', type=int, default=10, help='the number of classes' )
     parser.add_argument('-out_dir', default='./weights/', help='the output directory (training logs and trained model)')
 
-    parser.add_argument('-channel_mean', type=float, nargs='+', default=(0.4914, 0.4822, 0.4465), 
-                        help='the channel mean of images for training set')
-    parser.add_argument('-channel_std', type=float, nargs='+', default=(0.2023, 0.1994, 0.2010), 
-                        help='the channel standard deviation of images for training set')
-
     # Training setting
     parser.add_argument('-gpu_id', default='0', help='setup visible gpus, for example 0,1')
     parser.add_argument('-model_name', help='the classification model')
@@ -61,6 +56,28 @@ def ParseTrainArgs():
     parser.add_argument('-epochs', type=int, default=300, help='the total training epochs')
     parser.add_argument('-val_epochs', type=int, default=10, help='the frequency to validate model')
     parser.add_argument('-display_interval', type=int, default=100,  help='the total training epochs')
+
+    # Data augmentation and normalization setting
+    parser.add_argument("-resize", type=int, nargs='+', default=None, help='resize training images (W,H)')
+    parser.add_argument("-random_resize", action='store_true', default=False, 
+                        help='randomly resize training image instead of fixed size')
+    parser.add_argument("-random_resize_scale", type=float, nargs='+', default=(0.08, 1.0), 
+                        help='scale range of size of the origin size cropped')
+    parser.add_argument("-random_resize_ratio", type=float, nargs='+', default=(0.75, 1.33), 
+                        help='resize training images with delta (W,H)')
+    parser.add_argument("-random_flip_H", action='store_true', default=False, help='horizontally flip training images')
+    parser.add_argument("-random_flip_V", action='store_true', default=False, help='vertically flip training images')
+    parser.add_argument("-random_crop_size", type=int, nargs='+', default=(32, 32), help='crop training images')
+    parser.add_argument("-random_rotation", type=int, nargs='+', default=None, help='random rotation with self-defined angles, e.q. (0, 90, 180, 270)')
+    parser.add_argument("-color_jitter_factor", type=float, nargs='+', default=(0, 0, 0, 0), help='color jittering for training images [brightness, contrast, saturation, hue]')
+
+    parser.add_argument("-resize_val", type=int, nargs='+', default=None, help='resize validation images (W,H)')
+    parser.add_argument("-center_crop_val", type=int, nargs='+', default=None, help='center crop validation images (W,H)')
+
+    parser.add_argument('-channel_mean', type=float, nargs='+', default=(0.4914, 0.4822, 0.4465), 
+                        help='the channel mean of images for training set')
+    parser.add_argument('-channel_std', type=float, nargs='+', default=(0.2023, 0.1994, 0.2010), 
+                        help='the channel standard deviation of images for training set')
 
     # Optimization setting
     parser.add_argument('-base_lr', type=float, default=0.1, help='the learning rate')
@@ -129,7 +146,6 @@ def train(net, train_Loader, val_Loader, device, args, epoch_iters, outputManage
     batch_time = []
     log_str = "Epoch: [{:3d}/{:3d}] Iterations: [{:3d}/{:3d}] Loss: {:.3f} Batch_time: {:.2f} ms LR: {:.4f}"
 
-    outputManage.output('\n{}: Start Training '.format(utils.GetCurrentTime()))
     start_training = time.time()
 
     best_ep = 0
@@ -142,6 +158,7 @@ def train(net, train_Loader, val_Loader, device, args, epoch_iters, outputManage
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, nesterov=args.nesterov, weight_decay=args.weight_decay)
 
+    outputManage.output('\n{}: Start Training '.format(GetCurrentTime()))
     for epoch in range(args.epochs):  # loop over the dataset multiple times
         
         if (epoch+1) in args.lr_decay_steps:
@@ -196,7 +213,7 @@ def train(net, train_Loader, val_Loader, device, args, epoch_iters, outputManage
 
     end_training = time.time()
     trainingTime = round((end_training - start_training)/60)
-    outputManage.output('{}: Training Finished  '.format(utils.GetCurrentTime()))
+    outputManage.output('{}: Training Finished  '.format(GetCurrentTime()))
     outputManage.output('Training time: {} mins'.format(trainingTime))
     
     best_acc = round(best_acc, 4)
@@ -213,7 +230,7 @@ def main():
     os.makedirs(args.out_dir, exist_ok=True)
     best_model_path = os.path.join(args.out_dir, args.model_name + "_Best.pth")
     log_file_path = os.path.join(args.out_dir, args.model_name + time.strftime('_%Y-%m-%d-%H-%M', time.localtime(time.time())) + '.log')
-    outputManage = utils.OutputManager(log_file_path)
+    outputManage = OutputManager(log_file_path)
 
     outputManage.output("\nHyper-parameter setting:")
     lr_decay_steps_str = "["
@@ -225,24 +242,8 @@ def main():
         
     ''' Loading and normalizing Custom dataset '''
     outputManage.output("Setup dataset ...")
-    transform = transforms.Compose(
-        [
-        #  transforms.Resize(size=(60,60)),
-        #  transforms.RandomCrop(size=(48,48)),
-         transforms.RandomCrop(size=(32,32), padding=4),
-         transforms.RandomHorizontalFlip(),
-        #  transforms.RandomVerticalFlip(),
-         transforms.ToTensor(),
-         transforms.Normalize(args.channel_mean, args.channel_std),
-         ])
-
-    transform_val = transforms.Compose(
-        [
-        #  transforms.Resize(size=(60,60)),
-        #  transforms.CenterCrop(size=(54,54)),
-         transforms.ToTensor(),
-         transforms.Normalize(args.channel_mean, args.channel_std),
-         ])
+    transform = transforms.Compose(prepareAugmentation(args, is_train=True))
+    transform_val = transforms.Compose(prepareAugmentation(args, is_train=False))
 
     train_Dataset = cDataset.ClassifyDataset(args.fList_train, args.img_dir, transform=transform)
     train_Loader = DataLoader(train_Dataset, batch_size=args.batch_size_train, shuffle=True, num_workers=2)

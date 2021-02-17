@@ -1,7 +1,7 @@
 set currentPath=%CD%
 set imgPath=D:/Dataset/Classification/cifar10
 set programDir=E:/Coding/Pytorch/project/Classification_Pytorch
-set model_name=ResNet110
+set model_name=ResNet110_v2
 
 @REM #-----------------------------------------------------------------------------------#
 

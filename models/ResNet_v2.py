@@ -1,15 +1,14 @@
-import torch
+from torch import rand
 import torch.nn as nn
 
-# __all__ = ["ResNet18_v2", "ResNet34_v2", "ResNet50_v2", "ResNet101_v2", "ResNet152_v2"]
+import sys
+sys.path.append(".")
+from models.layers import Conv
 
-# num_blocks = [3, 4, 6, 3]
-# conv_channels = [64, 128, 256, 512]
-
-class ResBlock(nn.Module):
+class ResBlock_v2(nn.Module):
     expansion = 1
     def __init__(self, in_channel, out_channel, stride = 1):
-        super(ResBlock,self).__init__()
+        super(ResBlock_v2,self).__init__()
         self.bias = False
        
         self.downsample_shortcut =  nn.Sequential()
@@ -40,11 +39,11 @@ class ResBlock(nn.Module):
 
         return x
 
-class ResBlock_bottleneck(nn.Module):
+class ResBlock_bottleneck_v2(nn.Module):
     expansion = 4
 
     def __init__(self, in_channel, out_channel, stride = 1):
-        super(ResBlock_bottleneck,self).__init__()
+        super(ResBlock_bottleneck_v2,self).__init__()
         self.expansion = 4
         self.bias = False
        
@@ -69,7 +68,6 @@ class ResBlock_bottleneck(nn.Module):
             nn.BatchNorm2d(out_channel),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channel, out_channel*self.expansion, kernel_size=1, stride=1, bias=self.bias),
-
         )
 
     def forward(self, x):
@@ -93,26 +91,46 @@ def ResGroup(block, in_channel, out_channel, num_blocks=2, stride=2):
 
 
 class ResNet_v2(nn.Module):
-    def __init__(self, block, num_classes, num_blocks=[3, 4, 6, 3], conv_channels=[64, 128, 256, 512], init_weights=True):
+    def __init__(self, block, num_classes, num_blocks=[3, 4, 6, 3], conv_channels=[64, 128, 256, 512], 
+                 stride_times=5, init_weights=True):
         super(ResNet_v2, self).__init__()
 
-        self.conv1 = nn.Sequential(
-            # nn.Conv2d(3, conv_channels[0], kernel_size=7, stride=2, padding=3, bias=False),
-            nn.Conv2d(3, conv_channels[0], kernel_size=3, stride=1, padding=1, bias=False),
-        )
-        # self.maxpool =  nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.maxpool = nn.Sequential()
+        # Normal input size (for ImageNet; e.g. 224, 256, 288)
+        if stride_times==5:
+            self.conv1 = Conv(c1=3, c2=conv_channels[0], k=7, s=2, p=3, g=1, bias=False, bn=False, act=False)
+            self.maxpool =  nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        # Small input size (e.g. 112, 128, 144)
+        elif stride_times==4:
+            self.conv1 = Conv(c1=3, c2=conv_channels[0], k=7, s=1, p=3, g=1, bias=False, bn=False, act=False)
+            self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        # Tiny input size (e.g. 56, 64, 72)
+        elif stride_times==3:
+            self.conv1 = Conv(c1=3, c2=conv_channels[0], k=3, s=1, p=1, g=1, bias=False, bn=False, act=False)
+            self.maxpool = nn.Sequential()
+        # Extreme tiny input size (for Cifar; e.g. 28, 32, 36)
+        elif stride_times==2:
+            self.conv1 = Conv(c1=3, c2=conv_channels[0], k=3, s=1, p=1, g=1, bias=False, bn=False, act=False)
+            self.maxpool = nn.Sequential()  
+            # no stride in first conv and remove group4
 
         self.group1 = ResGroup(block, conv_channels[0], conv_channels[0], num_blocks[0], 1)
         self.group2 = ResGroup(block, conv_channels[0]*block.expansion, conv_channels[1], num_blocks[1])
         self.group3 = ResGroup(block, conv_channels[1]*block.expansion, conv_channels[2], num_blocks[2])
-        self.group4 = ResGroup(block, conv_channels[2]*block.expansion, conv_channels[3], num_blocks[3])
         
-        self.bn = nn.BatchNorm2d(conv_channels[3]*block.expansion)
+        if stride_times==2: # remove group4 for stride_times=2
+            self.group4 = nn.Sequential()
+        else:
+            self.group4 = ResGroup(block, conv_channels[2]*block.expansion, conv_channels[3], num_blocks[3])
+               
         self.relu = nn.ReLU(inplace=True)
-
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Linear(conv_channels[3]*block.expansion, num_classes)
+        
+        if stride_times==2: # use conv_channels[2] because group4 was removed
+            self.bn = nn.BatchNorm2d(conv_channels[2]*block.expansion)
+            self.fc = nn.Linear(conv_channels[2]*block.expansion, num_classes)
+        else:
+            self.bn = nn.BatchNorm2d(conv_channels[3]*block.expansion)
+            self.fc = nn.Linear(conv_channels[3]*block.expansion, num_classes)
 
         if init_weights:
             self._initialize_weights()
@@ -150,18 +168,49 @@ class ResNet_v2(nn.Module):
 
 #---------------------------------------------------------------------------------------------------------------#
 
-def Build_ResNet18_v2(num_classes=10, init_weights=True):
-    return ResNet_v2(ResBlock, num_classes, num_blocks=[2, 2, 2, 2], init_weights=True)
+# __all__ = ["ResNet18_v2", "ResNet34_v2", "ResNet50_v2", "ResNet101_v2", "ResNet152_v2"]
 
-def Build_ResNet34_v2(num_classes=10, init_weights=True):
-    return ResNet_v2(ResBlock, num_classes, num_blocks=[3, 4, 6, 3], init_weights=True)
+def Build_ResNet18_v2(num_classes=10, stride_times=5, init_weights=True):
+    return ResNet_v2(ResBlock_v2, num_classes, num_blocks=[2, 2, 2, 2], stride_times=stride_times, init_weights=True)
 
-def Build_ResNet50_v2(num_classes=10, init_weights=True):
-    return ResNet_v2(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 6, 3], init_weights=True)
+def Build_ResNet34_v2(num_classes=10, stride_times=5, init_weights=True):
+    return ResNet_v2(ResBlock_v2, num_classes, num_blocks=[3, 4, 6, 3], stride_times=stride_times, init_weights=True)
 
-def Build_ResNet101_v2(num_classes=10, init_weights=True):
-    return ResNet_v2(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 23, 3], init_weights=True)
+def Build_ResNet50_v2(num_classes=10, stride_times=5, init_weights=True):
+    return ResNet_v2(ResBlock_bottleneck_v2, num_classes, num_blocks=[3, 4, 6, 3], stride_times=stride_times, init_weights=True)
 
-def Build_ResNet152_v2(num_classes=10, init_weights=True):
-    return ResNet_v2(ResBlock_bottleneck, num_classes, num_blocks=[3, 8, 36, 3], init_weights=True)
+def Build_ResNet101_v2(num_classes=10, stride_times=5, init_weights=True):
+    return ResNet_v2(ResBlock_bottleneck_v2, num_classes, num_blocks=[3, 4, 23, 3], stride_times=stride_times, init_weights=True)
+
+def Build_ResNet152_v2(num_classes=10, stride_times=5, init_weights=True):
+    return ResNet_v2(ResBlock_bottleneck_v2, num_classes, num_blocks=[3, 8, 36, 3], stride_times=stride_times, init_weights=True)
+
+# for cifar-10
+def Build_ResNet110_v2(num_classes=10, stride_times=5, init_weights=True):
+    assert stride_times==2, "stride_times of ResNet110_v2 (for cifar) should be 2"
+    return ResNet_v2(ResBlock_v2, num_classes, num_blocks=[18, 18, 18], stride_times=stride_times, conv_channels=[16, 32, 64], init_weights=True)
+
+#---------------------------------------------------------------------------------------------------------------#  
+
+# for testing
+if __name__ == '__main__':
+    model = Build_ResNet18_v2(num_classes=10, stride_times=3, init_weights=True)
+    img = rand(1, 3, 32, 32)
+    output = model.forward(img)
+    print(model)
+    
+    model = Build_ResNet34_v2(num_classes=10, stride_times=2, init_weights=True)
+    img = rand(1, 3, 32, 32)
+    output = model.forward(img)
+    print(model)
+        
+    model = Build_ResNet101_v2(num_classes=10, stride_times=4, init_weights=True)
+    img = rand(1, 3, 128, 128)
+    output = model.forward(img)
+    print(model)
+    
+    # model = Build_ResNet101_v2(num_classes=10, stride_times=2, init_weights=True)
+    # img = rand(1, 3, 32, 32)
+    # output = model.forward(img)
+    # print(model)
 

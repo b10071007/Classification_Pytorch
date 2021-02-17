@@ -1,7 +1,7 @@
 currentPath=$PWD
 imgPath=D:/Dataset/Classification/cifar10
 programDir=E:/Coding/Pytorch/project/Classification_Pytorch
-model_name=DenseNet100_k12
+model_name=ResNet101
 
 # #-----------------------------------------------------------------------------------#
 
@@ -14,13 +14,14 @@ python ${programDir}/Train.py \
     \
     -gpu_id 0 \
     -model_name ${model_name} \
+    -stride_times 2 \
     -batch_size_train 64 \
     -batch_size_val 100 \
     -epochs 300 \
     -val_epochs 10 \
     -display_interval 200 \
     \
-    -resize 48 48 \
+    -resize 32 32 \
     -random_resize \
     -random_resize_scale 0.8 1.2 \
     -random_resize_ratio 0.75 1.33 \
@@ -29,7 +30,7 @@ python ${programDir}/Train.py \
     -random_rotation 0 90 180 270 \
     -color_jitter_factor 0.5 0.5 0.5 0.3 \
     -random_crop_size 32 32 \
-    -resize_val 48 48 \
+    -resize_val 32 32 \
     -center_crop_val 32 32 \
     \
     -channel_mean 0.4914 0.4822 0.4465 \

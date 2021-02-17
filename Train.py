@@ -51,6 +51,7 @@ def ParseTrainArgs():
     # Training setting
     parser.add_argument('-gpu_id', default='0', help='setup visible gpus, for example 0,1')
     parser.add_argument('-model_name', help='the classification model')
+    parser.add_argument('-stride_times', type=int, default=5, help='flexible architechtures according to different strides times (e.g. stride_times=5 means reduce 2^5=32)')
     parser.add_argument('-batch_size_train', type=int, default=64, help='the batch size for training')
     parser.add_argument('-batch_size_val', type=int, default=100, help='the batch size for validation')
     parser.add_argument('-epochs', type=int, default=300, help='the total training epochs')
@@ -267,7 +268,7 @@ def main():
     net = None
     for model_names_each in model_names:
         if args.model_name == model_names_each:
-            net = models.__dict__["Build_" + model_names_each](num_classes = args.num_classes, init_weights = True)
+            net = models.__dict__["Build_" + model_names_each](num_classes = args.num_classes, stride_times=args.stride_times, init_weights = True)
             break
     if net is None:
         raise ValueError("Not support model -> \"{}\"".format(args.model_name))

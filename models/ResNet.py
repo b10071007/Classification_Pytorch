@@ -1,9 +1,6 @@
 from torch import rand
 import torch.nn as nn
-from layers import Conv
-
-# num_blocks = [3, 4, 6, 3]
-# conv_channels = [64, 128, 256, 512]
+from models.layers import Conv
 
 class ResBlock(nn.Module):
     expansion = 1
@@ -183,8 +180,13 @@ def Build_ResNet101(num_classes=10, stride_times=5, init_weights=True):
 def Build_ResNet152(num_classes=10, stride_times=5, init_weights=True):
     return ResNet(ResBlock, num_classes, num_blocks=[3, 8, 36, 3], stride_times=stride_times, init_weights=True)
 
+# for cifar-10
+def Build_ResNet110(num_classes=10, stride_times=5, init_weights=True):
+    return ResNet(ResBlock, num_classes, num_blocks=[18, 18, 18], stride_times=stride_times, conv_channels=[16, 32, 64], init_weights=True)
+
 #---------------------------------------------------------------------------------------------------------------#  
-    
+
+# for testing
 if __name__ == '__main__':
     model = Build_ResNet18(num_classes=10, stride_times=3, init_weights=True)
     img = rand(1, 3, 32, 32)
@@ -198,6 +200,11 @@ if __name__ == '__main__':
         
     model = Build_ResNet101(num_classes=10, stride_times=4, init_weights=True)
     img = rand(1, 3, 128, 128)
+    output = model.forward(img)
+    print(model)
+    
+    model = Build_ResNet110(num_classes=10, stride_times=2, init_weights=True)
+    img = rand(1, 3, 32, 32)
     output = model.forward(img)
     print(model)
     

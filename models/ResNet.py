@@ -1,5 +1,8 @@
 from torch import rand
 import torch.nn as nn
+
+import sys
+sys.path.append(".")
 from models.layers import Conv
 
 class ResBlock(nn.Module):
@@ -172,16 +175,17 @@ def Build_ResNet34(num_classes=10, stride_times=5, init_weights=True):
     return ResNet(ResBlock, num_classes, num_blocks=[3, 4, 6, 3], stride_times=stride_times, init_weights=True)
 
 def Build_ResNet50(num_classes=10, stride_times=5, init_weights=True):
-    return ResNet(ResBlock, num_classes, num_blocks=[3, 4, 6, 3], stride_times=stride_times, init_weights=True)
+    return ResNet(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 6, 3], stride_times=stride_times, init_weights=True)
 
 def Build_ResNet101(num_classes=10, stride_times=5, init_weights=True):
-    return ResNet(ResBlock, num_classes, num_blocks=[3, 4, 23, 3], stride_times=stride_times, init_weights=True)
+    return ResNet(ResBlock_bottleneck, num_classes, num_blocks=[3, 4, 23, 3], stride_times=stride_times, init_weights=True)
 
 def Build_ResNet152(num_classes=10, stride_times=5, init_weights=True):
-    return ResNet(ResBlock, num_classes, num_blocks=[3, 8, 36, 3], stride_times=stride_times, init_weights=True)
+    return ResNet(ResBlock_bottleneck, num_classes, num_blocks=[3, 8, 36, 3], stride_times=stride_times, init_weights=True)
 
 # for cifar-10
 def Build_ResNet110(num_classes=10, stride_times=5, init_weights=True):
+    assert stride_times==2, "stride_times of ResNet110_v2 (for cifar) should be 2"
     return ResNet(ResBlock, num_classes, num_blocks=[18, 18, 18], stride_times=stride_times, conv_channels=[16, 32, 64], init_weights=True)
 
 #---------------------------------------------------------------------------------------------------------------#  

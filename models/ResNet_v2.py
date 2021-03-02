@@ -190,6 +190,10 @@ def Build_ResNet110_v2(num_classes=10, stride_times=5, init_weights=True):
     assert stride_times==2, "stride_times of ResNet110_v2 (for cifar) should be 2"
     return ResNet_v2(ResBlock_v2, num_classes, num_blocks=[18, 18, 18], stride_times=stride_times, conv_channels=[16, 32, 64], init_weights=True)
 
+def Build_ResNet164_v2(num_classes=10, stride_times=5, init_weights=True):
+    assert stride_times==2, "stride_times of ResNet164_v2 (for cifar) should be 2"
+    return ResNet_v2(ResBlock_bottleneck_v2, num_classes, num_blocks=[18, 18, 18], stride_times=stride_times, conv_channels=[16, 32, 64], init_weights=True)
+
 #---------------------------------------------------------------------------------------------------------------#  
 
 # for testing

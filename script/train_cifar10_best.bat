@@ -10,7 +10,7 @@ python %programDir%/Train.py ^
     -fList_train %imgPath%/train_all.txt ^
     -fList_val %imgPath%/test.txt ^
     -num_classes 10 ^
-    -out_dir ./debug/model/%model_name%/r2 ^
+    -out_dir ./debug/model/%model_name%/r1 ^
     ^
     -gpu_id 0 ^
     -model_name %model_name% ^
@@ -21,12 +21,10 @@ python %programDir%/Train.py ^
     -val_epochs 10 ^
     -display_interval 200 ^
     ^
-    -resize 36 36 ^
+    -resize 34 34 ^
     -random_flip_H ^
-    -random_flip_V ^
-    -random_rotation 0 90 180 270 ^
     -random_crop_size 32 32 ^
-    -resize_val 32 32 ^
+    -resize_val 34 34 ^
     -center_crop_val 32 32 ^
     ^
     -channel_mean 0.4914 0.4822 0.4465 ^
@@ -36,7 +34,10 @@ python %programDir%/Train.py ^
     -gamma 0.1 ^
     -lr_decay_steps 150 225 ^
     -weight_decay 0.0005 ^
-    -warm_epoch 3
+    -warm_epoch 1
+
+    @REM -random_flip_V ^
+    @REM -random_rotation 0 90 180 270 ^
     
 @REM #-----------------------------------------------------------------------------------#
 

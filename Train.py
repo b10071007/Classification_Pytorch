@@ -47,7 +47,8 @@ def ParseTrainArgs():
     parser.add_argument('-fList_val', help='the mappling list for validation set' )
     parser.add_argument('-num_classes', type=int, default=10, help='the number of classes' )
     parser.add_argument('-out_dir', default='./weights/', help='the output directory (training logs and trained model)')
-
+    parser.add_argument('-num_workers', type=int, default=8,  help='how many subprocesses to use for data loading.')
+    
     # Training setting
     parser.add_argument('-gpu_id', default='0', help='setup visible gpus, for example 0,1')
     parser.add_argument('-model_name', help='the classification model')
@@ -57,7 +58,7 @@ def ParseTrainArgs():
     parser.add_argument('-epochs', type=int, default=300, help='the total training epochs')
     parser.add_argument('-val_epochs', type=int, default=10, help='the frequency to validate model')
     parser.add_argument('-display_interval', type=int, default=100,  help='the total training epochs')
-
+    
     # Data augmentation and normalization setting
     parser.add_argument("-resize", type=int, nargs='+', default=None, help='resize training images (W,H)')
     parser.add_argument("-random_resize", action='store_true', default=False, 
@@ -247,9 +248,9 @@ def main():
     transform_val = transforms.Compose(prepareAugmentation(args, is_train=False))
 
     train_Dataset = cDataset.ClassifyDataset(args.fList_train, args.img_dir, transform=transform)
-    train_Loader = DataLoader(train_Dataset, batch_size=args.batch_size_train, shuffle=True, num_workers=2)
+    train_Loader = DataLoader(train_Dataset, batch_size=args.batch_size_train, shuffle=True, num_workers=args.num_workers)
     val_Dataset = cDataset.ClassifyDataset(args.fList_val, args.img_dir, transform=transform_val)
-    val_Loader = DataLoader(val_Dataset, batch_size=args.batch_size_val, shuffle=False, num_workers=2)
+    val_Loader = DataLoader(val_Dataset, batch_size=args.batch_size_val, shuffle=False, num_workers=args.num_workers)
 
     num_train = len(train_Dataset)
     epoch_iters = num_train // args.batch_size_train

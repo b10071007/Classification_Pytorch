@@ -14,6 +14,7 @@ python ${programDir}/Train.py \
     -fList_val ${imgPath}/test.txt \
     -num_classes 10 \
     -out_dir ./../model/${model_name}/flipH_resize34/ \
+    -num_workers 8 \
     \
     -gpu_id 0 \
     -model_name ${model_name} \

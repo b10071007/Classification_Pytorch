@@ -24,6 +24,12 @@ class OutputManager():
     def close(self):
         self.log_file.close()
 
+def convert_list_to_str(l):
+    l_str = "["
+    for s in l: l_str += (str(s) + ",")
+    l_str = l_str[:-1] + "]"
+    return l_str
+
 def softmax(x):
     e_x = np.exp(x)
     return e_x / e_x.sum(1).reshape(e_x.shape[0],1)

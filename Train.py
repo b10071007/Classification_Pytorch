@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 import sys
 sys.path.append("E:/Coding/pytorch/project/Classification_Pytorch/")
 from dataset import classifyDataset as cDataset
-from utils import OutputManager, GetCurrentTime, prepareAugmentation
+from utils import OutputManager, GetCurrentTime, prepareAugmentation, convert_list_to_str
 import models
 
 #--------------------------------------------------------------------------------------------------------#
@@ -236,12 +236,36 @@ def main():
     outputManage = OutputManager(log_file_path)
 
     outputManage.output("\nHyper-parameter setting:")
-    lr_decay_steps_str = "["
-    for s in args.lr_decay_steps: lr_decay_steps_str += (str(s) + ",")
-    lr_decay_steps_str = lr_decay_steps_str[:-1] + "]"
+    # lr_decay_steps_str = "["
+    # for s in args.lr_decay_steps: lr_decay_steps_str += (str(s) + ",")
+    # lr_decay_steps_str = lr_decay_steps_str[:-1] + "]"
 
-    outputManage.output(" - lr = {}\n - gamma = {}\n - lr_decay_steps = {}\n - batch_size = {}\n - epochs = {}\n".format(
-        args.base_lr, args.gamma, lr_decay_steps_str, args.batch_size_train, args.epochs))
+    hyper_param_output =  " - lr = {} \n" \
+                        + " - gamma = {} \n" \
+                        + " - lr_decay_steps = {} \n" \
+                        + " - batch_size = {} \n" \
+                        + " - epochs = {} \n" \
+                        + " - weight_decay = {} \n" \
+                        + " - warm_epoch = {} \n" \
+                        + " - resize = {} \n" \
+                        + " - random_flip_H = {} \n" \
+                        + " - random_flip_V = {} \n" \
+                        + " - random_crop_size = {} \n" \
+                        + " - resize_val = {} \n" \
+                        + " - center_crop_val = {} \n" \
+                        + " - random_rotation = {} \n" \
+                        
+                        # + " - XXX = {}" \
+                        # + " - XXX = {}" \
+                        # + " - XXX = {}" \
+                            
+    hyper_param_output = hyper_param_output.format(
+        args.base_lr, args.gamma, convert_list_to_str(args.lr_decay_steps), args.batch_size_train, args.epochs, 
+        args.weight_decay, args.warm_epoch, convert_list_to_str(args.resize), args.random_flip_H, args.random_flip_V, 
+        convert_list_to_str(args.random_crop_size), convert_list_to_str(args.resize_val),
+        convert_list_to_str(args.center_crop_val), args.random_rotation)
+    
+    outputManage.output(hyper_param_output)
         
     ''' Loading and normalizing Custom dataset '''
     outputManage.output("Setup dataset ...")

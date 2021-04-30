@@ -39,11 +39,15 @@ def ParseArgsForBatch(batchPath, outPath):
 
 if __name__ == '__main__':
 
-    batchPathList = ["./script/train.bat",
+    batchPathList = [
+                    "./script/finetune_cifar10.bat",
+                    "./script/train.bat",
                     "./script/test.bat",
                     ]
 
-    outPathList = [ "./.vscode/args_train.txt",
+    outPathList = [ 
+                    "./.vscode/args_finetune.txt",
+                    "./.vscode/args_train.txt",
                     "./.vscode/args_test.txt",
                     ]
 

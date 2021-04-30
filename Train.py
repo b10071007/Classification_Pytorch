@@ -52,6 +52,7 @@ def ParseTrainArgs():
     # Training setting
     parser.add_argument('-gpu_id', default='0', help='setup visible gpus, for example 0,1')
     parser.add_argument('-model_name', help='the classification model')
+    parser.add_argument('-pretrained', default='None', help='the path of pre-trained model')
     parser.add_argument('-stride_times', type=int, default=5, help='flexible architechtures according to different strides times (e.g. stride_times=5 means reduce 2^5=32)')
     parser.add_argument('-batch_size_train', type=int, default=64, help='the batch size for training')
     parser.add_argument('-batch_size_val', type=int, default=100, help='the batch size for validation')
@@ -274,6 +275,39 @@ def main():
     if net is None:
         raise ValueError("Not support model -> \"{}\"".format(args.model_name))
 
+    ''' Load pre-trained model'''
+    if args.pretrained != "None":
+        # Get state_dict of built model and pre-trained model
+        state_dict_built = net.state_dict()
+        state_dict_pretrain = torch.load(args.pretrained)
+        
+        # Preprocess layer names and get the number of classes of pre-trained model
+        from collections import OrderedDict
+        new_state_dict_pretrain = OrderedDict()
+        num_classes_pretrain = args.num_classes
+        
+        for k, v in state_dict_pretrain.items():
+            if k[:7] == 'module.':
+                name = k[7:]  
+            else:
+                name = k
+            
+            # if "num_classes_pretrain" is different from "num_classes" -> discard fc layer
+            if "fc" in name:
+                num_classes_pretrain = v.shape[0]
+                if num_classes_pretrain != args.num_classes:
+                    continue
+            
+            new_state_dict_pretrain[name] = v
+                
+        state_dict_built.update(new_state_dict_pretrain)
+        net.load_state_dict(state_dict_built)
+        print("Load pre-trained model:", args.pretrained)
+        
+    else:
+        print("Training from scratch")
+        
+    
     ''' Setup GPU '''
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
     if torch.cuda.is_available():

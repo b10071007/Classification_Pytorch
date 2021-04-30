@@ -61,7 +61,7 @@ def prepareAugmentation(args, is_train=True):
         # Random Resize
         elif(args.random_resize == True):
             if args.resize is not None:
-                augmentationList.extend( transforms.Resize(size=args.resize) )
+                augmentationList.extend( [transforms.Resize(size=args.resize)] )
             # resizeFirst = np.array(args.random_crop_size) * args.random_resize_scale[1] * args.random_resize_ratio[1]
             # resizeFirst = resizeFirst.astype(int)
             augmentationList.extend(   
